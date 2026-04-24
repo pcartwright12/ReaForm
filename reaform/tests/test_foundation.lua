@@ -1,9 +1,12 @@
 local Schemas = require("reaform.core.schemas")
+local Ids = require("reaform.core.ids")
 local ObjectRegistry = require("reaform.core.object_registry")
 local RelationshipGraph = require("reaform.core.relationship_graph")
 local AnalysisRegistry = require("reaform.core.analysis_registry")
 local RuleSetRegistry = require("reaform.core.ruleset_registry")
 local ProfileRegistry = require("reaform.core.profile_registry")
+local TransformRegistry = require("reaform.core.transform_registry")
+local Persistence = require("reaform.core.persistence")
 local EvaluationContext = require("reaform.contracts.evaluation_context")
 local EvaluationResult = require("reaform.contracts.evaluation_result")
 local EvaluationClassifier = require("reaform.engine.evaluation_classifier")
@@ -36,6 +39,7 @@ function Tests.run()
     AnalysisRegistry.reset()
     RuleSetRegistry.reset()
     ProfileRegistry.reset()
+    TransformRegistry.reset()
 
     local normalized_object = Schemas.normalize_object({
         id = "legacy_material",
@@ -89,6 +93,12 @@ function Tests.run()
     assert_true(fetched_ruleset.ok and fetched_ruleset.data.id == serialism.id, "ruleset registry should fetch rulesets")
     test_count = test_count + 1
 
+    local stored_transform = TransformRegistry.get_transform("serial.retrograde")
+    assert_true(stored_transform.ok and stored_transform.data.ruleset_id == serialism.id, "transform registry should register ruleset transforms")
+    local stored_lenses = AnalysisRegistry.list_lenses({ ruleset_id = serialism.id })
+    assert_true(stored_lenses.ok and #stored_lenses.data == 1, "analysis registry should register ruleset lenses")
+    test_count = test_count + 1
+
     local saved_profile = ProfileRegistry.save_profile({
         id = "serial.basic",
         name = "Serial Basic",
@@ -130,6 +140,38 @@ function Tests.run()
     })
     assert_true(schenkerian_evaluated.ok, "schenkerian ruleset should evaluate through shared API")
     assert_true(schenkerian_evaluated.data.evaluation.classification == "pass", "schenkerian evaluation should classify as pass")
+    test_count = test_count + 1
+
+    local temp_project_path = Ids.generate("project_state") .. ".json"
+    local saved_project = Persistence.save_project(temp_project_path, { purpose = "foundation-test" })
+    assert_true(saved_project.ok, "persistence should save project state")
+    local loaded_project = Persistence.load_project(temp_project_path)
+    assert_true(loaded_project.ok, "persistence should load project state")
+    assert_true(loaded_project.data.schema_version == 1, "project persistence should preserve schema version")
+    assert_true(#loaded_project.data.objects == 1, "project persistence should round-trip objects")
+    assert_true(#loaded_project.data.rulesets == 1, "project persistence should round-trip ruleset state")
+    test_count = test_count + 1
+
+    local temp_ruleset_path = Ids.generate("ruleset_state") .. ".json"
+    local saved_ruleset_state = Persistence.save_ruleset(temp_ruleset_path, serialism)
+    assert_true(saved_ruleset_state.ok, "persistence should save ruleset state")
+    local loaded_ruleset_state = Persistence.load_ruleset(temp_ruleset_path)
+    assert_true(loaded_ruleset_state.ok, "persistence should load ruleset state")
+    assert_true(loaded_ruleset_state.data.module_path == serialism.module_path, "ruleset persistence should preserve module path")
+    assert_true(loaded_ruleset_state.data.serialization_version == 1, "ruleset persistence should preserve serialization version")
+    test_count = test_count + 1
+
+    local temp_profile_path = Ids.generate("profile_state") .. ".json"
+    local saved_profile_state = Persistence.save_profile(temp_profile_path, {
+        id = "serial.persistence",
+        active_ruleset_id = serialism.id,
+        version = 3,
+    })
+    assert_true(saved_profile_state.ok, "persistence should save profile state")
+    local loaded_profile_state = Persistence.load_profile(temp_profile_path)
+    assert_true(loaded_profile_state.ok, "persistence should load profile state")
+    assert_true(loaded_profile_state.data.version == 3, "profile persistence should preserve version")
+    assert_true(loaded_profile_state.data.active_ruleset_id == serialism.id, "profile persistence should preserve ruleset references")
     test_count = test_count + 1
 
     local core_file = read_file("reaform/core/musical_object.lua")

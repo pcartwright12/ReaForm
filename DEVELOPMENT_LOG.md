@@ -117,3 +117,59 @@
   - [ ] Enforce this policy in PR review/checklist process if stricter automation is desired.
 - Next step:
   - [ ] Optionally add a CI or pre-commit check that verifies both tracking files are modified whenever repository files change.
+
+## 2026-04-24T08:19:32.4440987-05:00
+
+- Files changed:
+  - `reaform/core/schemas.lua`
+  - `reaform/core/analysis_registry.lua`
+  - `reaform/core/relationship_graph.lua`
+  - `reaform/core/ruleset.lua`
+  - `reaform/core/ruleset_registry.lua`
+  - `reaform/core/transform_registry.lua`
+  - `reaform/core/persistence.lua`
+  - `reaform/rulesets/counterpoint/species_1.lua`
+  - `reaform/rulesets/serialism/basic_row.lua`
+  - `reaform/rulesets/neo_riemannian/basic_triads.lua`
+  - `reaform/rulesets/schenkerian/basic_reduction.lua`
+  - `reaform/rulesets/custom/dummy.lua`
+  - `reaform/tests/test_foundation.lua`
+  - `reaform/tests/runner.lua`
+  - `README.md`
+  - `docs/status-against-lockfile.md`
+  - `docs/testing-and-contributing.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: added transform registration and analysis-lens registration seams, introduced JSON-safe persistence helpers for project/ruleset/profile state, annotated placeholder rulesets with module paths and analysis lenses, expanded foundation tests for persistence round-trips, and fixed a Lua 5.4 runner bug where the last `require(...)` in the suite list expanded an extra return value into a bogus fourth suite entry.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 23 total tests.
+- Status:
+  - [x] Workspace-local Lua 5.4 runtime downloaded and used for validation.
+  - [x] Transform registration seams added.
+  - [x] Analysis-lens registration seams added.
+  - [x] JSON-safe persistence helpers added.
+  - [x] Persistence and registration coverage added to the foundation suite.
+  - [x] Runtime runner bug fixed for Lua 5.4.
+- Outstanding:
+  - [ ] Add restoration/import helpers if saved project state should repopulate registries instead of only round-tripping as persisted data.
+  - [ ] Tighten schema validation and broader packaging work from the remaining plan items.
+- Next step:
+  - [ ] Continue with `main.lua` and/or ruleset packaging and restoration work.
+
+## 2026-04-24T08:19:32.4440987-05:00 (follow-up)
+
+- Files changed:
+  - `.gitignore`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: formalized the workspace-local Lua runtime as an ignored local convenience by adding `.tools/` and transient persistence-test artifacts to `.gitignore`, which keeps runtime validation local without turning the downloaded interpreter into a repository dependency.
+- Validation command run: `git status --short`
+- Result: passed; `.tools/` no longer appears as an untracked repository change after adding ignore rules.
+- Status:
+  - [x] Local Lua runtime policy decided.
+  - [x] Workspace-local tooling ignored from source control.
+- Outstanding:
+  - [ ] Add restoration/import helpers if saved project state should repopulate registries instead of only round-tripping as persisted data.
+  - [ ] Tighten schema validation and broader packaging work from the remaining plan items.
+- Next step:
+  - [ ] Continue with `main.lua` and/or ruleset packaging and restoration work.

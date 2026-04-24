@@ -31,6 +31,7 @@ local ALLOWED_EXTENSION_FIELDS = {
     validation_modes = true,
     default_profiles = true,
     serialization_version = true,
+    module_path = true,
 }
 
 local function collect_unknown_fields(candidate)

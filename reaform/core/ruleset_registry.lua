@@ -1,6 +1,8 @@
 local Result = require("reaform.utils.result")
 local Validation = require("reaform.utils.validation")
 local RuleSet = require("reaform.core.ruleset")
+local TransformRegistry = require("reaform.core.transform_registry")
+local AnalysisRegistry = require("reaform.core.analysis_registry")
 
 local RuleSetRegistry = {
     _rulesets = {},
@@ -17,7 +19,20 @@ function RuleSetRegistry.save_ruleset(ruleset)
     end
 
     RuleSetRegistry._rulesets[normalized.data.id] = Validation.copy_table(normalized.data)
-    return Result.ok(Validation.copy_table(normalized.data), normalized.warnings)
+    local transform_result = TransformRegistry.register_ruleset_transforms(normalized.data)
+    if not transform_result.ok then
+        return transform_result
+    end
+
+    local lens_result = AnalysisRegistry.register_ruleset_lenses(normalized.data)
+    if not lens_result.ok then
+        return lens_result
+    end
+
+    return Result.ok(
+        Validation.copy_table(normalized.data),
+        Result.merge_warnings(normalized.warnings, transform_result.warnings, lens_result.warnings)
+    )
 end
 
 function RuleSetRegistry.get_ruleset(id)

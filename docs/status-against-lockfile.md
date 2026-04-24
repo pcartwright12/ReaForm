@@ -4,7 +4,7 @@ This document compares the current repository to the attached project lockfile. 
 
 ## Summary
 
-The lockfile describes a much broader Phase 1 foundation with registries, richer schemas, more engine services, persistence, profiles, placeholder rulesets for more domains, and broader tests. The current repository implements a smaller proof-of-direction centered on four generic contracts, two engine entry points, and a few placeholder rulesets.
+The lockfile describes a much broader Phase 1 foundation with registries, richer schemas, more engine services, persistence, profiles, placeholder rulesets for more domains, and broader tests. The current repository now includes the first persistence boundary plus transform and analysis-lens registration seams, but it still remains a smaller proof-of-direction than the full spec.
 
 ## Implemented Now
 
@@ -14,7 +14,9 @@ The lockfile describes a much broader Phase 1 foundation with registries, richer
 - Generic `Transformation` contract and shared transformation execution path
 - Generic `RuleSet` contract with nested validation for constraints and transformations
 - Canonical schema normalization for objects, rulesets, profiles, evaluation contexts, and evaluation results
-- In-memory registries for objects, relationships, analyses, rulesets, and profiles
+- In-memory registries for objects, relationships, analyses, rulesets, profiles, and transforms
+- Analysis-lens registration driven from saved rulesets
+- JSON-safe persistence helpers for project, ruleset, and profile state
 - Shared generation entry point via `Generator.generate`
 - Shared evaluation entry point via `Evaluator.evaluate`
 - Formal `EvaluationContext` and `EvaluationResult` contracts wired into the shared evaluator
@@ -27,6 +29,8 @@ The lockfile describes a much broader Phase 1 foundation with registries, richer
 - Tests proving:
   - core contracts validate data
   - shared APIs work across multiple rulesets
+  - persistence state round-trips
+  - transform and analysis-lens registration
   - non-counterpoint rulesets do not require counterpoint engine concepts
 
 ## Partially Represented
@@ -38,42 +42,31 @@ These lockfile goals are present in reduced or incomplete form:
 - Canonical object schemas:
   Present through a compatibility-oriented normalization layer, but not every lockfile schema field is enforced with rich domain validation yet.
 - Rule and transformation contracts:
-  Present for constraints, transformations, and rulesets, but not split into the full contract files named in the lockfile.
+  Present for constraints, transformations, and rulesets, and now support persistence-safe transform declarations, but are not split into the full contract files named in the lockfile.
 - Initial engine contracts:
   Present through the current generator and evaluator entry points plus formal evaluation context/result objects, but still far smaller than the full engine split named in the lockfile.
 - Minimal test scaffolding:
   Present, but smaller than the lockfile test layout and coverage list.
 - Multiple ruleset examples:
   Present, but with fewer domains and much lighter placeholder content than the target structure.
+- Persistence boundary:
+  Present for JSON-safe save/load of project, ruleset, and profile state, but still minimal and not yet a full project restoration/orchestration layer.
 
 ## Not Yet Implemented
 
 The following lockfile targets are not implemented in the current repository:
 
-- `ids.lua`
-- `schemas.lua`
-- `object_registry.lua`
-- `relationship_graph.lua`
-- `analysis_registry.lua`
-- `ruleset_registry.lua`
-- `profile_registry.lua`
-- `persistence.lua`
-- `evaluation_classifier.lua`
 - `rule_evaluator.lua`
-- `constraint_evaluator.lua`
 - `candidate_ranker.lua`
 - `generation_engine.lua`
 - `transform_engine.lua`
 - `analysis_engine.lua`
 - `development_engine.lua`
-- `strategy_dispatcher.lua`
 - Formal contract modules for:
   - rule contract
   - transform contract
   - analysis contract
   - generation contract
-  - evaluation context
-  - evaluation result
   - operation result
 - Modules layer such as:
   - material generator
@@ -83,10 +76,7 @@ The following lockfile targets are not implemented in the current repository:
   - sketch lab
   - reduction lab
   - transformation lab
-- Profiles and profile loading
-- Basic persistence and versioned schema save/load boundaries
 - Relationship graph semantics beyond raw object relationship tables
-- Analysis registry and analysis lens infrastructure
 - Broader ruleset directory structure with profiles, rules, constraints, transforms, generators, and analyses subdirectories
 
 ## Important Deltas
@@ -133,7 +123,7 @@ These are useful entry points, but they are not yet the full engine skeleton des
 
 ### Registry And Persistence Delta
 
-The lockfile depends heavily on registries and versioned persistence boundaries. None of those systems exist yet in the current repository.
+The repository now has first-pass registries, transform and analysis-lens registration, and JSON-safe persistence helpers. What is still missing is a fuller restoration story, migration support, and deeper relationship/analysis semantics.
 
 ### Ruleset And Profile Delta
 
@@ -150,15 +140,11 @@ The lockfile expects much broader capability declarations, profiles, analysis le
 
 ### Test Delta
 
-The current tests cover contract validation and basic shared-engine behavior. They do not yet cover:
+The current tests cover contract validation, shared-engine behavior, persistence round-trips, transform registration, analysis-lens registration, and shared-layer anti-regression checks. They do not yet cover:
 
 - ruleset registries
 - profile loading
 - provenance tracking
-- transform registration
-- analysis lens registration
-- persistence behavior
-- Schenkerian placeholder loading
 - lockfile-level anti-regression coverage in full detail
 
 ## Current Direction Still Matches The Lockfile
@@ -174,27 +160,10 @@ That alignment matters because it means the current repository is directionally 
 
 ## Future-Facing APIs From The Lockfile
 
-The lockfile names several APIs that are not implemented yet and should be documented only as future-facing goals, not current interfaces:
+The lockfile names several APIs that are implemented in reduced form or still not implemented yet. Contributors should distinguish between the current repository surface and the broader target architecture:
 
-- `create_object(type, payload)`
-- `get_object(id)`
-- `update_object(id, patch)`
-- `list_objects(filter)`
-- `create_relationship(type, from_id, to_id, metadata)`
-- `get_relationships(filter)`
-- `store_analysis(record)`
-- `get_analyses(target_id, filter)`
-- `get_ruleset(id)`
-- `save_ruleset(ruleset)`
-- `list_rulesets(filter)`
-- `validate_ruleset(ruleset)`
-- `get_profile(id)`
-- `save_profile(profile)`
-- `list_profiles(filter)`
-- `create_evaluation_context(payload)`
-- `evaluate(context)`
 - `rank_candidates(context, candidates)`
 - `apply_transform(transform_id, source_ids, options)`
+- `create_evaluation_context(payload)`
+- `evaluate(context)`
 - `generate(strategy_id, context)`
-
-Contributors should treat these as architectural targets from the lockfile, not as capabilities already present in this repository.

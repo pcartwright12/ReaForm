@@ -10,10 +10,12 @@ Implemented today:
 
 - Generic core contracts for `MusicalObject`, `Constraint`, `Transformation`, and `RuleSet`
 - Canonical schema normalization helpers and in-memory registries for objects, relationships, analyses, rulesets, and profiles
+- Transform registration and analysis-lens registration seams driven from saved rulesets
+- JSON-safe persistence helpers for project, ruleset, and profile state
 - Formal `EvaluationContext` and `EvaluationResult` contracts for shared evaluation flow
 - Shared engine entry points for generation and evaluation
 - Placeholder rulesets for counterpoint, serialism, neo-Riemannian work, Schenkerian reduction, and custom extensions
-- A small test suite proving cross-ruleset behavior through shared APIs and the new lockfile-alignment seams
+- A small test suite proving cross-ruleset behavior, persistence round-trips, and the new lockfile-alignment seams
 
 Not implemented yet:
 
@@ -39,10 +41,13 @@ From the repository root:
 lua reaform/tests/runner.lua
 ```
 
-The test runner executes the contract suite and the cross-ruleset behavior suite.
-It also executes the foundation suite for canonical schema normalization, registries, evaluation contracts, and shared-layer anti-regression checks.
+If `lua` is not on `PATH`, a local workspace runtime can also be used:
 
-If `lua` is not installed or not on `PATH`, the command will fail at the shell boundary before repository tests can run. That environment blocker is tracked in `DEVELOPMENT_LOG.md`.
+```powershell
+.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua
+```
+
+The test runner executes the contract suite, the cross-ruleset behavior suite, and the foundation suite for canonical schema normalization, registries, persistence, evaluation contracts, and shared-layer anti-regression checks.
 
 ## Documentation
 

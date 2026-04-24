@@ -2,6 +2,7 @@ local ruleset = {
     id = "counterpoint.species_1",
     name = "Counterpoint Species 1 (Minimal)",
     domain = "counterpoint",
+    module_path = "reaform.rulesets.counterpoint.species_1",
     object_types = { "SpeciesLine", "ReferenceLine" },
     constraints = {
         {

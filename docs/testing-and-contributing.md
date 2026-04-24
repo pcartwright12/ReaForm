@@ -45,6 +45,8 @@ These tests are intentionally small, but they enforce the current architectural 
 
 - legacy object normalization into the richer canonical schema
 - in-memory object, relationship, analysis, ruleset, and profile registries
+- transform registration and analysis-lens registration through saved rulesets
+- JSON-safe persistence round-trips for project, ruleset, and profile state
 - formal evaluation context and evaluation result contracts
 - Schenkerian placeholder ruleset loading through the shared APIs
 - anti-regression checks that shared core and engine files do not require counterpoint-specific concepts

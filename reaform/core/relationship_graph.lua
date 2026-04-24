@@ -23,16 +23,30 @@ function RelationshipGraph.create_relationship(relationship_type, from_id, to_id
         })
     end
 
+    local nested_metadata = type(metadata) == "table" and metadata.metadata or metadata
     local relationship = {
-        id = Ids.generate("relationship"),
+        id = (type(metadata) == "table" and metadata.id) or Ids.generate("relationship"),
         type = relationship_type,
         from_id = from_id,
         to_id = to_id,
-        metadata = Validation.copy_table(metadata or {}),
+        metadata = Validation.copy_table(nested_metadata or {}),
     }
 
     RelationshipGraph._relationships[relationship.id] = relationship
     return Result.ok(Validation.copy_table(relationship))
+end
+
+function RelationshipGraph.store_relationship(record)
+    if not Validation.is_table(record) then
+        return Result.fail({
+            Validation.error("relationship.invalid_record", "Relationship record must be a table.", nil, nil),
+        })
+    end
+
+    return RelationshipGraph.create_relationship(record.type, record.from_id, record.to_id, {
+        id = record.id,
+        metadata = record.metadata,
+    })
 end
 
 function RelationshipGraph.get_relationships(filter)

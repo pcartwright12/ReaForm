@@ -22,11 +22,11 @@ Current working features:
 
 Obvious gaps:
 
-- persistence and versioned project save/load boundaries
+- full project restoration and migration support beyond the new JSON-safe persistence helpers
 - broader engine split from the lockfile
 - ruleset packaging with profiles/rules/transforms/analyses subtrees
-- analysis-lens and transform registration beyond minimal seams
-- executable runtime validation in this environment because `lua` is not installed on `PATH`
+- deeper analysis-lens and transform semantics beyond the new registration seams
+- default `lua` command availability on `PATH`
 
 ## Documentation Alignment Matrix
 
@@ -35,13 +35,13 @@ Obvious gaps:
 | Ruleset-driven generic shared core | `README.md`, `docs/architecture.md`, lockfile core principle | Complete | Shared engine still delegates musical meaning to rulesets. | Low |
 | Legacy `MusicalObject` contract remains stable | `docs/architecture.md`, existing tests | Complete | Kept public legacy shape and added canonical normalization behind it. | Low |
 | Canonical object/profile/evaluation schemas | `docs/ReaForm_Lockfile.md` | Partial | Added normalization helpers and formal evaluation contracts, but not full schema enforcement for every future field. | Medium |
-| Shared registries for objects/relationships/analyses/rulesets/profiles | `docs/ReaForm_Lockfile.md` | Partial | Added minimal in-memory registries with thin APIs; no persistence yet. | Medium |
+| Shared registries for objects/relationships/analyses/rulesets/profiles | `docs/ReaForm_Lockfile.md` | Partial | Added minimal in-memory registries with thin APIs plus transform and analysis-lens registration seams. | Medium |
 | Formal evaluation context/result objects | `docs/ReaForm_Lockfile.md` | Partial | Added contracts and evaluator integration; generator/transform contracts remain smaller than target. | Medium |
 | Schenkerian placeholder ruleset | `docs/ReaForm_Lockfile.md`, `docs/status-against-lockfile.md` | Complete | Added minimal placeholder using shared APIs only. | Low |
-| Persistence boundary | `docs/ReaForm_Lockfile.md` | Missing | Deferred until after core seams stabilize. | High |
+| Persistence boundary | `docs/ReaForm_Lockfile.md` | Partial | Added JSON-safe save/load helpers for project, ruleset, and profile state, but not full restoration or migration support. | Medium |
 | Broader engine decomposition | `docs/ReaForm_Lockfile.md` | Partial | Added classifier/dispatcher/constraint evaluator only where immediately useful. | Medium |
-| Anti-counterpoint regression coverage | lockfile explicit anti-regression rules | Partial | Added static coverage for shared core/engine source and multi-ruleset tests; still blocked from runtime execution locally. | Medium |
-| Repository validation command works in local environment | `README.md`, `docs/testing-and-contributing.md` | Conflicting | `lua reaform/tests/runner.lua` is documented correctly but fails here because `lua` is unavailable. | High |
+| Anti-counterpoint regression coverage | lockfile explicit anti-regression rules | Partial | Added static and runtime coverage for shared core/engine source and multi-ruleset tests. | Medium |
+| Repository validation command works in local environment | `README.md`, `docs/testing-and-contributing.md` | Partial | Validation succeeds with a workspace-local Lua 5.4 runtime; the plain `lua` command still depends on `PATH`. | Medium |
 
 ## Development Phases
 
@@ -51,7 +51,7 @@ Obvious gaps:
   - [x] Preserve current public entry points and legacy shapes.
   - [x] Expand architecture tests before deeper refactors.
   - [x] Record runtime validation blockers and exact command results.
-  - [ ] Unblock runtime Lua validation.
+  - [x] Unblock runtime Lua validation with a workspace-local interpreter.
 
 ### Phase 1: Core Model Alignment
 
@@ -59,27 +59,28 @@ Obvious gaps:
   - [x] Introduce canonical schema normalization for objects, rulesets, profiles, and evaluation payloads.
   - [x] Add in-memory registries for objects, relationships, analyses, rulesets, and profiles.
   - [x] Keep shared APIs thin and compatibility-oriented.
-  - [ ] Add persistence-backed storage for these seams.
+  - [x] Add minimal persistence-backed storage for project, ruleset, and profile state.
 
 ### Phase 2: Engine Contract Alignment
 
 - Status:
   - [x] Continue decomposing evaluation/generation internals where immediately useful.
   - [x] Extend formal result classification and shared strategy dispatch.
-  - [ ] Add transform registration seams.
-  - [ ] Add analysis registration seams beyond the minimal registry boundary.
+  - [x] Add transform registration seams.
+  - [x] Add analysis registration seams beyond the minimal record registry boundary.
 
 ### Phase 3: Persistence And Packaging
 
 - Status:
-  - [ ] Add versioned persistence for project, ruleset, and profile state.
+  - [x] Add versioned persistence for project, ruleset, and profile state.
   - [ ] Gradually expand ruleset packaging structure without cosmetic churn.
-  - [ ] Add serialization coverage and migration notes.
+  - [x] Add serialization coverage.
+  - [ ] Add migration notes.
 
 ### Phase 4: Validation And Polish
 
 - Status:
-  - [ ] Improve test breadth once a Lua runtime is available in the environment.
+  - [x] Improve test breadth with runtime persistence and registration coverage.
   - [ ] Reconcile remaining doc/code drift.
   - [ ] Tighten acceptance coverage for registries, persistence, and multi-ruleset loading.
 
@@ -163,8 +164,8 @@ Obvious gaps:
   - [x] Add Schenkerian placeholder.
   - [x] Add registry and contract tests.
   - [x] Add static shared-layer anti-regression checks.
-  - [ ] Execute the repository test runner with a Lua runtime.
-- Tests or validation: repository test runner once Lua is available; static review now.
+  - [x] Execute the repository test runner with a Lua runtime.
+- Tests or validation: repository test runner with a workspace-local Lua 5.4 runtime.
 - Acceptance criteria: new ruleset and suite are present and integrated into the runner.
 - Dependencies: shared evaluator and generator.
 - Rollback notes: low risk; placeholder and tests can be removed independently if they prove incompatible.
@@ -175,19 +176,16 @@ Obvious gaps:
 - UI regressions: none in this phase because no UI exists. Residual risk is low.
 - Data migration risk: future persistence work will need an explicit migration story because the public legacy object shape and canonical shape now coexist. Mitigation: keep conversion seams explicit.
 - Broken compatibility: evaluator/generator internals now normalize more data. Mitigation: preserve current entry points and rule hook signatures.
-- Test gaps: runtime execution is blocked by missing `lua`, so syntax/runtime regressions remain possible. Mitigation: document blocker and keep changes incremental.
+- Test gaps: runtime execution now works with a workspace-local interpreter, but the default `lua` command still depends on local environment setup. Mitigation: keep the documented fallback command and consider checked-in tooling policy later.
 - Documentation conflict: some docs describe the pre-registry skeleton while the lockfile describes a larger target. Mitigation: update current-state docs only where code now changed and keep future-facing language explicit.
 
 ## Immediate Next Actions
 
-- [ ] Restore executable validation by installing or exposing a Lua interpreter on `PATH`.
-- [ ] Add minimal persistence helpers for project, ruleset, and profile state.
-- [ ] Expand tests to cover persistence round-trips and ruleset/profile serialization versions.
-- [ ] Add transform registration and analysis-lens registration seams.
+- [x] Treat the workspace-local Lua runtime as an ignored local convenience rather than a committed repository dependency.
 - [ ] Introduce a small `main.lua` or equivalent shared entry surface if the repo wants a lockfile-style top-level boundary.
 - [ ] Decide whether ruleset directories should start gaining `ruleset.lua` wrappers now or wait until persistence/registry loading is in place.
 - [ ] Tighten ruleset/profile schema validation beyond normalization defaults.
-- [ ] Re-run and record the full Lua suite once runtime is available.
+- [ ] Add project-state restore/import helpers if persisted snapshots should repopulate registries instead of only round-tripping as saved state.
 
 ## Assumptions And Defaults
 
@@ -195,4 +193,4 @@ Obvious gaps:
 - Legacy public shapes remain supported until explicit migration work is planned.
 - In-memory registries are the correct first step before persistence.
 - No UI, orchestration, or advanced domain behavior is introduced in this phase.
-- Validation remains partially blocked until a Lua interpreter is available in the local environment.
+- Validation now works through a workspace-local Lua 5.4 runtime even when `lua` is not on `PATH`.

@@ -24,7 +24,15 @@ local ruleset = {
     id = "serialism.basic_row",
     name = "Serialism Basic Row",
     domain = "serialism",
+    module_path = "reaform.rulesets.serialism.basic_row",
     object_types = { "ToneRow" },
+    analysis_lenses = {
+        {
+            id = "serial.row_form",
+            name = "Row Form Analysis",
+            target_object_types = { "ToneRow" },
+        },
+    },
     constraints = {
         {
             id = "serial.row_length",

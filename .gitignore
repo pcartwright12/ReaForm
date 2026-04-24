@@ -1,0 +1,4 @@
+.tools/
+project_state_*.json
+ruleset_state_*.json
+profile_state_*.json

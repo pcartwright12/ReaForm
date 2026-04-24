@@ -2,7 +2,15 @@ local ruleset = {
     id = "custom.dummy",
     name = "Dummy Custom RuleSet",
     domain = "custom",
+    module_path = "reaform.rulesets.custom.dummy",
     object_types = { "DummyObject" },
+    analysis_lenses = {
+        {
+            id = "custom.marker",
+            name = "Marker Analysis",
+            target_object_types = { "DummyObject" },
+        },
+    },
     constraints = {
         {
             id = "dummy.always_pass",

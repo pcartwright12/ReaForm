@@ -2,7 +2,15 @@ local ruleset = {
     id = "schenkerian.basic_reduction",
     name = "Schenkerian Basic Reduction",
     domain = "schenkerian",
+    module_path = "reaform.rulesets.schenkerian.basic_reduction",
     object_types = { "ReductionLayer" },
+    analysis_lenses = {
+        {
+            id = "schenkerian.reduction",
+            name = "Reduction Analysis",
+            target_object_types = { "ReductionLayer" },
+        },
+    },
     constraints = {
         {
             id = "schenkerian.layer_has_events",

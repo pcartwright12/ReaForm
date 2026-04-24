@@ -6,7 +6,15 @@ local ruleset = {
     id = "neo_riemannian.basic_triads",
     name = "Neo-Riemannian Basic Triads",
     domain = "transformational",
+    module_path = "reaform.rulesets.neo_riemannian.basic_triads",
     object_types = { "Triad" },
+    analysis_lenses = {
+        {
+            id = "nr.triad_quality",
+            name = "Triad Quality Analysis",
+            target_object_types = { "Triad" },
+        },
+    },
     constraints = {
         {
             id = "nr.valid_quality",

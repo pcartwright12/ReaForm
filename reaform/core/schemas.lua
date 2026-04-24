@@ -25,6 +25,20 @@ local function normalize_legacy_relationships(value)
     return relationships
 end
 
+local function sanitize_constraint_for_persistence(constraint)
+    local persisted = Validation.copy_table(constraint)
+    persisted.evaluation_function = nil
+    persisted.has_evaluation_function = type(constraint and constraint.evaluation_function) == "function"
+    return persisted
+end
+
+local function sanitize_transform_for_persistence(transform)
+    local persisted = Validation.copy_table(transform)
+    persisted.transform_function = nil
+    persisted.has_transform_function = type(transform and transform.transform_function) == "function"
+    return persisted
+end
+
 function Schemas.normalize_object(payload)
     if not Validation.is_table(payload) then
         return Result.fail({
@@ -148,6 +162,7 @@ function Schemas.normalize_ruleset(payload)
         validation_modes = Validation.ensure_array(payload.validation_modes),
         default_profiles = Validation.ensure_array(payload.default_profiles),
         serialization_version = payload.serialization_version or 1,
+        module_path = payload.module_path,
         evaluation_strategy = payload.evaluation_strategy,
         generator_strategy = generation_strategy,
 
@@ -266,6 +281,49 @@ function Schemas.normalize_profile(payload)
     end
 
     return Result.ok(normalized)
+end
+
+function Schemas.serialize_ruleset_state(payload)
+    local normalized = Schemas.normalize_ruleset(payload)
+    if not normalized.ok then
+        return normalized
+    end
+
+    local ruleset = Validation.copy_table(normalized.data)
+    ruleset.generator_strategy = nil
+    ruleset.evaluation_strategy = nil
+    ruleset.generation_strategies = {}
+    ruleset.constraints = {}
+    ruleset.transforms = {}
+    ruleset.transformations = ruleset.transforms
+    ruleset.analysis_lenses = Validation.ensure_array(normalized.data.analysis_lenses)
+    ruleset.has_generator_strategy = type(normalized.data.generator_strategy) == "function"
+    ruleset.has_evaluation_strategy = type(normalized.data.evaluation_strategy) == "function"
+
+    for _, constraint in ipairs(normalized.data.constraints) do
+        ruleset.constraints[#ruleset.constraints + 1] = sanitize_constraint_for_persistence(constraint)
+    end
+
+    for _, transform in ipairs(normalized.data.transforms) do
+        ruleset.transforms[#ruleset.transforms + 1] = sanitize_transform_for_persistence(transform)
+    end
+
+    return Result.ok(ruleset, normalized.warnings)
+end
+
+function Schemas.serialize_profile_state(payload)
+    return Schemas.normalize_profile(payload)
+end
+
+function Schemas.serialize_transform_state(payload)
+    local persisted = sanitize_transform_for_persistence(payload or {})
+    if not Validation.is_non_empty_string(persisted.id) then
+        return Result.fail({
+            Validation.error("schemas.transform.invalid_id", "Transform id is required.", "id", nil),
+        })
+    end
+
+    return Result.ok(persisted)
 end
 
 function Schemas.normalize_evaluation_context(payload)
