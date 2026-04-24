@@ -28,6 +28,10 @@ function Validation.is_table(value)
     return type(value) == "table"
 end
 
+function Validation.is_number(value)
+    return type(value) == "number"
+end
+
 function Validation.is_array(value)
     if type(value) ~= "table" then
         return false
@@ -48,6 +52,42 @@ function Validation.is_array(value)
     end
 
     return true
+end
+
+function Validation.is_string_array(value)
+    if not Validation.is_array(value) then
+        return false
+    end
+
+    for _, item in ipairs(value) do
+        if type(item) ~= "string" or item == "" then
+            return false
+        end
+    end
+
+    return true
+end
+
+function Validation.ensure_array(value)
+    if Validation.is_array(value) then
+        return Validation.copy_table(value)
+    end
+
+    return {}
+end
+
+function Validation.matches_enum(value, allowed_values)
+    if type(value) ~= "string" or type(allowed_values) ~= "table" then
+        return false
+    end
+
+    for _, candidate in ipairs(allowed_values) do
+        if value == candidate then
+            return true
+        end
+    end
+
+    return false
 end
 
 function Validation.copy_table(value)

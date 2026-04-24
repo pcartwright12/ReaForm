@@ -6,8 +6,9 @@ The current ReaForm repository is a small, ruleset-driven skeleton. It establish
 
 Today the codebase is organized around five areas:
 
-- `reaform/core/`: contract validation and normalization for core domain objects
-- `reaform/engine/`: shared entry points for generation and evaluation
+- `reaform/core/`: contract validation, canonical schema normalization, and in-memory registries
+- `reaform/contracts/`: formal evaluation context and evaluation result contracts
+- `reaform/engine/`: shared entry points plus small evaluation dispatch helpers
 - `reaform/rulesets/`: domain-specific example rulesets
 - `reaform/tests/`: contract and behavior coverage
 - `reaform/utils/`: validation and result helpers used across the repository
@@ -29,8 +30,9 @@ Current public interface:
 
 - `MusicalObject.validate(candidate)`
 - `MusicalObject.create(payload)`
+- `MusicalObject.normalize(payload)`
 
-This is intentionally generic, but it is much smaller than the canonical object schema described in the lockfile. Fields such as provenance, timestamps, ruleset scope, analyses, parent and child links, and version metadata are not implemented yet.
+This remains intentionally generic, but the repository now includes a canonical normalization layer that can map the legacy object shape onto a richer internal structure with provenance, timestamps, ruleset scope, parent and child links, and version metadata. The public legacy shape remains supported for compatibility.
 
 ### `Constraint`
 
@@ -90,6 +92,16 @@ Current public interface:
 
 `RuleSet.validate` also validates nested constraints and transformations. Unknown fields are allowed and preserved with warnings, which leaves room for future growth without forcing the current engine to know every future ruleset capability.
 
+The repository also includes in-memory registries for:
+
+- objects
+- relationships
+- analyses
+- rulesets
+- profiles
+
+These are intentionally minimal and exist to establish the lockfile-aligned seams without introducing persistence or orchestration yet.
+
 ## Shared Engine Flow
 
 ### Generation
@@ -103,7 +115,7 @@ Current public interface:
 Flow:
 
 1. Normalize the supplied ruleset.
-2. Invoke the ruleset's `generator_strategy`.
+2. Invoke the ruleset's `generator_strategy` through a shared strategy dispatcher.
 3. Return a shared `Result` wrapper containing `ruleset_id` and the generated payload.
 
 The engine does not interpret musical semantics itself. It delegates candidate meaning to the ruleset strategy.
@@ -119,9 +131,10 @@ Current public interface:
 Flow:
 
 1. Normalize the supplied ruleset.
-2. Evaluate each ruleset constraint through the shared `Constraint.evaluate` path.
-3. Invoke the ruleset's `evaluation_strategy` with the original context and normalized constraint outcomes.
-4. Return a shared `Result` wrapper containing `ruleset_id`, constraint outcomes, and evaluation output.
+2. Create a formal `EvaluationContext`.
+3. Evaluate each ruleset constraint through a dedicated shared constraint evaluator path.
+4. Invoke the ruleset's `evaluation_strategy` with the original context, formal context, and normalized constraint outcomes.
+5. Normalize the output into a formal `EvaluationResult`.
 
 This is the current proof that rulesets share engine services while still defining their own domain behavior.
 
@@ -156,6 +169,7 @@ The repository currently includes these example rulesets:
 - `counterpoint/species_1.lua`
 - `serialism/basic_row.lua`
 - `neo_riemannian/basic_triads.lua`
+- `schenkerian/basic_reduction.lua`
 - `custom/dummy.lua`
 
 They are placeholders, not full implementations of those domains. Their main architectural purpose is to prove that the same shared engine can host multiple musical systems without hardcoding one of them into the core.

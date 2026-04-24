@@ -1,5 +1,6 @@
 local Validation = require("reaform.utils.validation")
 local Result = require("reaform.utils.result")
+local Schemas = require("reaform.core.schemas")
 
 local MusicalObject = {}
 
@@ -11,42 +12,17 @@ local REQUIRED_FIELDS = {
 }
 
 function MusicalObject.validate(candidate)
-    local errors = {}
-
-    if not Validation.is_table(candidate) then
-        errors[#errors + 1] = Validation.error(
-            "musical_object.not_table",
-            "MusicalObject must be a table.",
-            nil,
-            { received_type = type(candidate) }
-        )
-        return Result.fail(errors)
+    local normalized = Schemas.normalize_object(candidate)
+    if not normalized.ok then
+        return Result.fail(normalized.errors, normalized.warnings)
     end
 
-    for field, expected_type in pairs(REQUIRED_FIELDS) do
-        local value = candidate[field]
-        if value == nil then
-            errors[#errors + 1] = Validation.error(
-                "musical_object.missing_field",
-                "Missing required MusicalObject field.",
-                field,
-                { expected_type = expected_type }
-            )
-        elseif type(value) ~= expected_type then
-            errors[#errors + 1] = Validation.error(
-                "musical_object.invalid_type",
-                "Invalid field type on MusicalObject.",
-                field,
-                { expected_type = expected_type, received_type = type(value) }
-            )
-        end
+    local legacy = Schemas.to_legacy_object(normalized.data)
+    if not legacy.ok then
+        return legacy
     end
 
-    if #errors > 0 then
-        return Result.fail(errors)
-    end
-
-    return Result.ok(Validation.copy_table(candidate))
+    return Result.ok(legacy.data, normalized.warnings)
 end
 
 function MusicalObject.create(payload)
@@ -60,6 +36,10 @@ function MusicalObject.create(payload)
     }
 
     return MusicalObject.validate(normalized)
+end
+
+function MusicalObject.normalize(payload)
+    return Schemas.normalize_object(payload)
 end
 
 return MusicalObject

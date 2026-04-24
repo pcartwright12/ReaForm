@@ -13,12 +13,16 @@ The lockfile describes a much broader Phase 1 foundation with registries, richer
 - Generic `Constraint` contract and shared constraint execution path
 - Generic `Transformation` contract and shared transformation execution path
 - Generic `RuleSet` contract with nested validation for constraints and transformations
+- Canonical schema normalization for objects, rulesets, profiles, evaluation contexts, and evaluation results
+- In-memory registries for objects, relationships, analyses, rulesets, and profiles
 - Shared generation entry point via `Generator.generate`
 - Shared evaluation entry point via `Evaluator.evaluate`
+- Formal `EvaluationContext` and `EvaluationResult` contracts wired into the shared evaluator
 - Placeholder rulesets for:
   - counterpoint
   - serialism
   - neo-Riemannian work
+  - schenkerian reduction
   - custom extensions
 - Tests proving:
   - core contracts validate data
@@ -30,13 +34,13 @@ The lockfile describes a much broader Phase 1 foundation with registries, richer
 These lockfile goals are present in reduced or incomplete form:
 
 - Shared core:
-  Present, but limited to a few contracts instead of the broader core module set.
+  Present, and now includes first-pass registries and normalization helpers, but it is still smaller than the broader core module set from the lockfile.
 - Canonical object schemas:
-  Present only as the small `MusicalObject` schema with `id`, `type`, `properties`, and `relationships`.
+  Present through a compatibility-oriented normalization layer, but not every lockfile schema field is enforced with rich domain validation yet.
 - Rule and transformation contracts:
   Present for constraints, transformations, and rulesets, but not split into the full contract files named in the lockfile.
 - Initial engine contracts:
-  Present only through the current generator and evaluator entry points.
+  Present through the current generator and evaluator entry points plus formal evaluation context/result objects, but still far smaller than the full engine split named in the lockfile.
 - Minimal test scaffolding:
   Present, but smaller than the lockfile test layout and coverage list.
 - Multiple ruleset examples:
@@ -83,7 +87,6 @@ The following lockfile targets are not implemented in the current repository:
 - Basic persistence and versioned schema save/load boundaries
 - Relationship graph semantics beyond raw object relationship tables
 - Analysis registry and analysis lens infrastructure
-- Placeholder `schenkerian` ruleset
 - Broader ruleset directory structure with profiles, rules, constraints, transforms, generators, and analyses subdirectories
 
 ## Important Deltas
@@ -110,12 +113,14 @@ The lockfile expects a richer canonical object schema with fields such as:
 - `version`
 - `notes`
 
-The current `MusicalObject` only contains:
+The compatibility-facing `MusicalObject` API still only returns:
 
 - `id`
 - `type`
 - `properties`
 - `relationships`
+
+Internally, the repository now normalizes those fields into a richer object model, but the legacy API remains the stable public surface for the current rulesets and tests.
 
 ### Engine Delta
 

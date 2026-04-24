@@ -7,6 +7,7 @@ package.path = table.concat({
 local suites = {
     require("reaform.tests.test_contracts"),
     require("reaform.tests.test_behavior"),
+    require("reaform.tests.test_foundation"),
 }
 
 local total_tests = 0

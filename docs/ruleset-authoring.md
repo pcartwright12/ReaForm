@@ -125,8 +125,7 @@ Compared with the lockfile target, ruleset authoring is still missing:
 - scoring models
 - validation modes
 - serialization versions
-- registry-based loading
-- formal evaluation context and evaluation result contracts
+- persistence-backed registry-based loading
 - first-class rule, analysis, and generation contract modules
 
-That means rulesets today are simple module tables, not yet the full capability-declaration system described in the spec.
+The repository now includes formal evaluation context/result contracts and a minimal ruleset registry boundary, but rulesets are still simple module tables rather than the full capability-declaration system described in the spec.

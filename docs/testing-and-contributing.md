@@ -12,6 +12,7 @@ The runner loads:
 
 - `reaform.tests.test_contracts`
 - `reaform.tests.test_behavior`
+- `reaform.tests.test_foundation`
 
 It prints one line per suite and exits non-zero if a suite crashes.
 
@@ -37,6 +38,16 @@ It prints one line per suite and exits non-zero if a suite crashes.
 - custom ruleset pluggability without engine modification
 
 These tests are intentionally small, but they enforce the current architectural claim that the engine can host multiple domains without being rewritten around one of them.
+
+### Foundation Coverage
+
+`reaform/tests/test_foundation.lua` checks:
+
+- legacy object normalization into the richer canonical schema
+- in-memory object, relationship, analysis, ruleset, and profile registries
+- formal evaluation context and evaluation result contracts
+- Schenkerian placeholder ruleset loading through the shared APIs
+- anti-regression checks that shared core and engine files do not require counterpoint-specific concepts
 
 ## Contribution Expectations
 

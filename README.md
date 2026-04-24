@@ -9,14 +9,15 @@ This repository does not yet match the full architecture described in the projec
 Implemented today:
 
 - Generic core contracts for `MusicalObject`, `Constraint`, `Transformation`, and `RuleSet`
+- Canonical schema normalization helpers and in-memory registries for objects, relationships, analyses, rulesets, and profiles
+- Formal `EvaluationContext` and `EvaluationResult` contracts for shared evaluation flow
 - Shared engine entry points for generation and evaluation
-- Placeholder rulesets for counterpoint, serialism, neo-Riemannian work, and custom extensions
-- A small test suite proving cross-ruleset behavior through shared APIs
+- Placeholder rulesets for counterpoint, serialism, neo-Riemannian work, Schenkerian reduction, and custom extensions
+- A small test suite proving cross-ruleset behavior through shared APIs and the new lockfile-alignment seams
 
 Not implemented yet:
 
-- The full registry-heavy architecture from the lockfile
-- Profiles, persistence, relationship graphs, formal evaluation context/result objects, and broader engine services
+- Persistence, module-layer workflows, and the broader multi-engine architecture from the lockfile
 - UI, orchestration, and advanced generation or analysis workflows
 
 ## Repository Layout
@@ -39,6 +40,9 @@ lua reaform/tests/runner.lua
 ```
 
 The test runner executes the contract suite and the cross-ruleset behavior suite.
+It also executes the foundation suite for canonical schema normalization, registries, evaluation contracts, and shared-layer anti-regression checks.
+
+If `lua` is not installed or not on `PATH`, the command will fail at the shell boundary before repository tests can run. That environment blocker is tracked in `DEVELOPMENT_LOG.md`.
 
 ## Documentation
 
@@ -47,6 +51,8 @@ The test runner executes the contract suite and the cross-ruleset behavior suite
 - [Ruleset Authoring](docs/ruleset-authoring.md)
 - [Testing and Contributing](docs/testing-and-contributing.md)
 - [Glossary](docs/glossary.md)
+- [Development Plan](DEVELOPMENT_PLAN.md)
+- [Development Log](DEVELOPMENT_LOG.md)
 
 ## Project Direction
 
