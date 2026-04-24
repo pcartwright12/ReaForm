@@ -6,15 +6,17 @@ ReaForm currently consists of a generic Lua shared core, a small shared engine, 
 
 Main modules and responsibilities:
 
+- `main.lua`: top-level entry surface for shared loading, orchestration helpers, and services
 - `reaform/core/`: shared object/ruleset contracts, canonical schema normalization, IDs, and in-memory registries
 - `reaform/contracts/`: formal evaluation context and evaluation result contracts
 - `reaform/engine/`: generic generation/evaluation flow and small dispatch/classification helpers
-- `reaform/rulesets/`: placeholder domain rulesets for counterpoint, serialism, neo-Riemannian work, Schenkerian reduction, and custom extension
+- `reaform/rulesets/`: placeholder domain rulesets with directory-level wrapper entry points for counterpoint, serialism, neo-Riemannian work, Schenkerian reduction, and custom extension
 - `reaform/tests/`: contract, behavior, and foundation-level architectural coverage
 
 Current working features:
 
 - generic object, constraint, transformation, and ruleset validation
+- top-level ruleset loading and orchestration through `main.lua`
 - shared generation and evaluation entry points across multiple rulesets
 - canonical normalization for legacy object/ruleset inputs
 - in-memory registries for objects, relationships, analyses, rulesets, and profiles
@@ -22,7 +24,7 @@ Current working features:
 
 Obvious gaps:
 
-- full project restoration and migration support beyond the new JSON-safe persistence helpers
+- migration and richer orchestration behavior beyond the new JSON-safe persistence save/load/import helpers
 - broader engine split from the lockfile
 - ruleset packaging with profiles/rules/transforms/analyses subtrees
 - deeper analysis-lens and transform semantics beyond the new registration seams
@@ -34,14 +36,15 @@ Obvious gaps:
 | --- | --- | --- | --- | --- |
 | Ruleset-driven generic shared core | `README.md`, `docs/architecture.md`, lockfile core principle | Complete | Shared engine still delegates musical meaning to rulesets. | Low |
 | Legacy `MusicalObject` contract remains stable | `docs/architecture.md`, existing tests | Complete | Kept public legacy shape and added canonical normalization behind it. | Low |
-| Canonical object/profile/evaluation schemas | `docs/ReaForm_Lockfile.md` | Partial | Added normalization helpers and formal evaluation contracts, but not full schema enforcement for every future field. | Medium |
+| Canonical object/profile/evaluation schemas | `docs/ReaForm_Lockfile.md` | Partial | Added normalization helpers, formal evaluation contracts, and stricter validation for several optional ruleset/profile fields, but not full schema enforcement for every future field. | Medium |
 | Shared registries for objects/relationships/analyses/rulesets/profiles | `docs/ReaForm_Lockfile.md` | Partial | Added minimal in-memory registries with thin APIs plus transform and analysis-lens registration seams. | Medium |
 | Formal evaluation context/result objects | `docs/ReaForm_Lockfile.md` | Partial | Added contracts and evaluator integration; generator/transform contracts remain smaller than target. | Medium |
 | Schenkerian placeholder ruleset | `docs/ReaForm_Lockfile.md`, `docs/status-against-lockfile.md` | Complete | Added minimal placeholder using shared APIs only. | Low |
-| Persistence boundary | `docs/ReaForm_Lockfile.md` | Partial | Added JSON-safe save/load helpers for project, ruleset, and profile state, but not full restoration or migration support. | Medium |
-| Broader engine decomposition | `docs/ReaForm_Lockfile.md` | Partial | Added classifier/dispatcher/constraint evaluator only where immediately useful. | Medium |
+| Persistence boundary | `docs/ReaForm_Lockfile.md` | Partial | Added JSON-safe save/load helpers, project-state import into live registries, a top-level orchestration facade for reset/import/export flows, and explicit migration notes, but not implemented migration dispatch/support yet. | Medium |
+| Broader engine decomposition | `docs/ReaForm_Lockfile.md` | Partial | Added classifier/dispatcher/constraint evaluator plus a small top-level `main.lua` orchestration surface for common run flows. | Medium |
 | Anti-counterpoint regression coverage | lockfile explicit anti-regression rules | Partial | Added static and runtime coverage for shared core/engine source and multi-ruleset tests. | Medium |
 | Repository validation command works in local environment | `README.md`, `docs/testing-and-contributing.md` | Partial | Validation succeeds with a workspace-local Lua 5.4 runtime; the plain `lua` command still depends on `PATH`. | Medium |
+| Host-independent top-level script loading | REAPER execution, `main.lua`, `reaform/tests/runner.lua` | Complete | Top-level scripts now resolve Lua modules relative to their own file location instead of the host process working directory. | Low |
 
 ## Development Phases
 
@@ -73,16 +76,17 @@ Obvious gaps:
 
 - Status:
   - [x] Add versioned persistence for project, ruleset, and profile state.
-  - [ ] Gradually expand ruleset packaging structure without cosmetic churn.
+  - [x] Gradually expand ruleset packaging structure without cosmetic churn.
   - [x] Add serialization coverage.
-  - [ ] Add migration notes.
+  - [x] Add project-state restore/import helpers.
+  - [x] Add migration notes.
 
 ### Phase 4: Validation And Polish
 
 - Status:
   - [x] Improve test breadth with runtime persistence and registration coverage.
   - [ ] Reconcile remaining doc/code drift.
-  - [ ] Tighten acceptance coverage for registries, persistence, and multi-ruleset loading.
+  - [x] Tighten acceptance coverage for registries, persistence, and multi-ruleset loading.
 
 ## Task Breakdown
 
@@ -182,15 +186,18 @@ Obvious gaps:
 ## Immediate Next Actions
 
 - [x] Treat the workspace-local Lua runtime as an ignored local convenience rather than a committed repository dependency.
-- [ ] Introduce a small `main.lua` or equivalent shared entry surface if the repo wants a lockfile-style top-level boundary.
-- [ ] Decide whether ruleset directories should start gaining `ruleset.lua` wrappers now or wait until persistence/registry loading is in place.
-- [ ] Tighten ruleset/profile schema validation beyond normalization defaults.
-- [ ] Add project-state restore/import helpers if persisted snapshots should repopulate registries instead of only round-tripping as saved state.
+- [x] Introduce a small `main.lua` shared entry surface.
+- [x] Start the ruleset packaging transition with directory-level `ruleset.lua` wrappers.
+- [x] Tighten ruleset/profile schema validation beyond normalization defaults.
+- [x] Give persisted-only imported rulesets/transforms a formal non-executable state/API.
+- [x] Expand `main.lua` from a thin loader into a small orchestration facade for common repository flows.
+- [x] Add migration notes.
+- [ ] Implement version-aware persistence migration dispatch and rejection rules.
 
 ## Assumptions And Defaults
 
 - The lockfile remains the target architecture, but the repository should reach it incrementally and without large rewrites.
 - Legacy public shapes remain supported until explicit migration work is planned.
 - In-memory registries are the correct first step before persistence.
-- No UI, orchestration, or advanced domain behavior is introduced in this phase.
+- No UI or advanced domain behavior is introduced in this phase; current orchestration remains a small top-level facade rather than a full module layer.
 - Validation now works through a workspace-local Lua 5.4 runtime even when `lua` is not on `PATH`.

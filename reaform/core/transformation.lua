@@ -3,6 +3,22 @@ local Result = require("reaform.utils.result")
 
 local Transformation = {}
 
+local function get_execution_state(candidate)
+    if not Validation.is_table(candidate) then
+        return "invalid"
+    end
+
+    if candidate.execution_state ~= nil then
+        return candidate.execution_state
+    end
+
+    if type(candidate.transform_function) == "function" then
+        return "executable"
+    end
+
+    return "persisted_metadata"
+end
+
 local REQUIRED_FIELDS = {
     id = "string",
     input_types = "table",
@@ -68,6 +84,20 @@ function Transformation.validate(candidate)
 end
 
 function Transformation.apply(transformation, input, context)
+    if get_execution_state(transformation) ~= "executable" then
+        return Result.fail({
+            Validation.error(
+                "transformation.not_executable",
+                "Transformation cannot execute because it was imported as persisted metadata without a live hook.",
+                "transform_function",
+                {
+                    transformation_id = type(transformation) == "table" and transformation.id or nil,
+                    execution_state = get_execution_state(transformation),
+                }
+            ),
+        })
+    end
+
     local validation = Transformation.validate(transformation)
     if not validation.ok then
         return Result.fail(validation.errors, validation.warnings)

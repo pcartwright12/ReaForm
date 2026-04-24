@@ -7,6 +7,11 @@ local MusicalObject = require("reaform.core.musical_object")
 local Generator = {}
 
 function Generator.generate(ruleset, context)
+    local executable = RuleSet.require_executable(ruleset, "generator_strategy")
+    if not executable.ok then
+        return executable
+    end
+
     local checked = RuleSet.normalize(ruleset)
     if not checked.ok then
         return Result.fail(checked.errors, checked.warnings)

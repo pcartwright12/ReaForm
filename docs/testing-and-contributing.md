@@ -25,6 +25,7 @@ It prints one line per suite and exits non-zero if a suite crashes.
 - `MusicalObject` creation and required field validation
 - `RuleSet` validation failure on incomplete definitions
 - warning behavior for unknown `RuleSet` fields
+- stricter failure cases for malformed optional `RuleSet` and `Profile` schema fields
 - `Constraint.evaluate`
 - `Transformation.apply`
 
@@ -32,6 +33,9 @@ It prints one line per suite and exits non-zero if a suite crashes.
 
 `reaform/tests/test_behavior.lua` checks:
 
+- `main.lua` ruleset loading and directory-level wrapper exposure
+- live ruleset execution-state reporting through the top-level surface
+- top-level `main.lua` orchestration helpers for built-in bootstrap and ruleset/transform resolution
 - serialism generation and evaluation through shared APIs
 - neo-Riemannian transformation execution through shared APIs
 - counterpoint generation and evaluation through shared APIs
@@ -47,6 +51,10 @@ These tests are intentionally small, but they enforce the current architectural 
 - in-memory object, relationship, analysis, ruleset, and profile registries
 - transform registration and analysis-lens registration through saved rulesets
 - JSON-safe persistence round-trips for project, ruleset, and profile state
+- project-state import back into live registries, with executable ruleset restoration when `module_path` resolves
+- top-level `main.lua` import/export and reset-state orchestration
+- top-level `main.lua` registration through the shared ruleset registry surface
+- persisted-only ruleset/transform execution-state reporting and clear non-executable failures
 - formal evaluation context and evaluation result contracts
 - Schenkerian placeholder ruleset loading through the shared APIs
 - anti-regression checks that shared core and engine files do not require counterpoint-specific concepts
@@ -81,6 +89,7 @@ Changes are considered incomplete if either file is not updated.
 1. Read the root `README.md`.
 2. Read [Architecture](architecture.md) for the current code shape.
 3. Read [Status Against Lockfile](status-against-lockfile.md) before implementing lockfile-driven work.
-4. Update or add tests when changing shared contracts or engine flow.
-5. Keep documentation aligned with actual file names and current behavior.
-6. If an AI edits the repository, require updates to both `DEVELOPMENT_PLAN.md` and `DEVELOPMENT_LOG.md` before completion.
+4. Read [Persistence Migration Notes](persistence-migration.md) before changing persistence version fields or import behavior.
+5. Update or add tests when changing shared contracts or engine flow.
+6. Keep documentation aligned with actual file names and current behavior.
+7. If an AI edits the repository, require updates to both `DEVELOPMENT_PLAN.md` and `DEVELOPMENT_LOG.md` before completion.

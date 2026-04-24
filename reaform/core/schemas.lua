@@ -39,6 +39,92 @@ local function sanitize_transform_for_persistence(transform)
     return persisted
 end
 
+local function is_plain_table(value)
+    return Validation.is_table(value) and (next(value) == nil or not Validation.is_array(value))
+end
+
+local function validate_optional_array_field(payload, field_name, code, message)
+    local value = payload[field_name]
+    if value ~= nil and not Validation.is_array(value) then
+        return Validation.error(code, message, field_name, { received_type = type(value) })
+    end
+    return nil
+end
+
+local function validate_optional_table_field(payload, field_name, code, message)
+    local value = payload[field_name]
+    if value ~= nil and not is_plain_table(value) then
+        return Validation.error(code, message, field_name, { received_type = type(value) })
+    end
+    return nil
+end
+
+local function validate_analysis_lenses(lenses)
+    for index, lens in ipairs(lenses) do
+        if not is_plain_table(lens) then
+            return Validation.error(
+                "schemas.ruleset.invalid_analysis_lens",
+                "RuleSet analysis_lenses entries must be tables.",
+                "analysis_lenses",
+                { index = index, received_type = type(lens) }
+            )
+        end
+
+        if not Validation.is_non_empty_string(lens.id) then
+            return Validation.error(
+                "schemas.ruleset.invalid_analysis_lens_id",
+                "RuleSet analysis_lenses entries must have non-empty ids.",
+                "analysis_lenses",
+                { index = index }
+            )
+        end
+
+        if lens.name ~= nil and not Validation.is_non_empty_string(lens.name) then
+            return Validation.error(
+                "schemas.ruleset.invalid_analysis_lens_name",
+                "RuleSet analysis_lenses entry names must be non-empty strings when provided.",
+                "analysis_lenses",
+                { index = index }
+            )
+        end
+
+        if lens.target_object_types ~= nil and not Validation.is_string_array(lens.target_object_types) then
+            return Validation.error(
+                "schemas.ruleset.invalid_analysis_lens_targets",
+                "RuleSet analysis_lenses target_object_types must be a string array when provided.",
+                "analysis_lenses",
+                { index = index }
+            )
+        end
+    end
+
+    return nil
+end
+
+local function validate_profile_rules(rule_entries, field_name)
+    for index, entry in ipairs(rule_entries) do
+        if not is_plain_table(entry) then
+            return Validation.error(
+                "schemas.profile.invalid_rule_entry",
+                "Profile rule entries must be tables.",
+                field_name,
+                { index = index, received_type = type(entry) }
+            )
+        end
+
+        if entry.id ~= nil and not Validation.is_non_empty_string(entry.id) then
+            return Validation.error(
+                "schemas.profile.invalid_rule_entry_id",
+                "Profile rule entry ids must be non-empty strings when provided.",
+                field_name,
+                { index = index }
+            )
+        end
+    end
+
+    return nil
+end
+
 function Schemas.normalize_object(payload)
     if not Validation.is_table(payload) then
         return Result.fail({
@@ -133,6 +219,69 @@ function Schemas.normalize_ruleset(payload)
         })
     end
 
+    local raw_array_fields = {
+        {
+            field = "supported_relationship_types",
+            code = "schemas.ruleset.invalid_supported_relationship_types",
+            message = "RuleSet supported_relationship_types must be an array when provided.",
+        },
+        {
+            field = "rule_groups",
+            code = "schemas.ruleset.invalid_rule_groups",
+            message = "RuleSet rule_groups must be an array when provided.",
+        },
+        {
+            field = "constraints",
+            code = "schemas.ruleset.invalid_constraints",
+            message = "RuleSet constraints must be an array.",
+        },
+        {
+            field = "analysis_lenses",
+            code = "schemas.ruleset.invalid_analysis_lenses",
+            message = "RuleSet analysis_lenses must be an array when provided.",
+        },
+        {
+            field = "scoring_models",
+            code = "schemas.ruleset.invalid_scoring_models",
+            message = "RuleSet scoring_models must be an array when provided.",
+        },
+        {
+            field = "validation_modes",
+            code = "schemas.ruleset.invalid_validation_modes",
+            message = "RuleSet validation_modes must be an array when provided.",
+        },
+        {
+            field = "default_profiles",
+            code = "schemas.ruleset.invalid_default_profiles",
+            message = "RuleSet default_profiles must be an array when provided.",
+        },
+    }
+    for _, entry in ipairs(raw_array_fields) do
+        local issue = validate_optional_array_field(payload, entry.field, entry.code, entry.message)
+        if issue ~= nil then
+            return Result.fail({ issue })
+        end
+    end
+
+    local raw_table_fields = {
+        {
+            field = "ontology",
+            code = "schemas.ruleset.invalid_ontology",
+            message = "RuleSet ontology must be a table when provided.",
+        },
+        {
+            field = "generation_strategies",
+            code = "schemas.ruleset.invalid_generation_strategies",
+            message = "RuleSet generation_strategies must be a table when provided.",
+        },
+    }
+    for _, entry in ipairs(raw_table_fields) do
+        local issue = validate_optional_table_field(payload, entry.field, entry.code, entry.message)
+        if issue ~= nil then
+            return Result.fail({ issue })
+        end
+    end
+
     local supported_object_types = Validation.ensure_array(payload.supported_object_types or payload.object_types)
     local transforms = Validation.ensure_array(payload.transforms or payload.transformations)
     local generation_strategy = payload.generator_strategy
@@ -189,6 +338,34 @@ function Schemas.normalize_ruleset(payload)
         })
     end
 
+    if payload.module_path ~= nil and not Validation.is_non_empty_string(payload.module_path) then
+        return Result.fail({
+            Validation.error(
+                "schemas.ruleset.invalid_module_path",
+                "RuleSet module_path must be a non-empty string when provided.",
+                "module_path",
+                nil
+            ),
+        })
+    end
+
+    if not Validation.is_number(normalized.version) or normalized.version < 1 then
+        return Result.fail({
+            Validation.error("schemas.ruleset.invalid_version", "RuleSet version must be a positive number.", "version", nil),
+        })
+    end
+
+    if not Validation.is_number(normalized.serialization_version) or normalized.serialization_version < 1 then
+        return Result.fail({
+            Validation.error(
+                "schemas.ruleset.invalid_serialization_version",
+                "RuleSet serialization_version must be a positive number.",
+                "serialization_version",
+                nil
+            ),
+        })
+    end
+
     if not Validation.is_string_array(normalized.supported_object_types) then
         return Result.fail({
             Validation.error(
@@ -210,6 +387,33 @@ function Schemas.normalize_ruleset(payload)
         return Result.fail({
             Validation.error("schemas.ruleset.invalid_transforms", "RuleSet transforms must be an array.", "transforms", nil),
         })
+    end
+
+    if normalized.supported_relationship_types ~= nil and not Validation.is_string_array(normalized.supported_relationship_types) then
+        return Result.fail({
+            Validation.error(
+                "schemas.ruleset.invalid_supported_relationship_types_values",
+                "RuleSet supported_relationship_types must be a string array when provided.",
+                "supported_relationship_types",
+                nil
+            ),
+        })
+    end
+
+    if normalized.validation_modes ~= nil and not Validation.is_string_array(normalized.validation_modes) then
+        return Result.fail({
+            Validation.error(
+                "schemas.ruleset.invalid_validation_modes_values",
+                "RuleSet validation_modes must be a string array when provided.",
+                "validation_modes",
+                nil
+            ),
+        })
+    end
+
+    local analysis_lens_issue = validate_analysis_lenses(normalized.analysis_lenses)
+    if analysis_lens_issue ~= nil then
+        return Result.fail({ analysis_lens_issue })
     end
 
     if type(normalized.generator_strategy) ~= "function" then
@@ -249,6 +453,59 @@ function Schemas.normalize_profile(payload)
         })
     end
 
+    local raw_array_fields = {
+        {
+            field = "rule_groups",
+            code = "schemas.profile.invalid_rule_groups",
+            message = "Profile rule_groups must be an array when provided.",
+        },
+        {
+            field = "rules",
+            code = "schemas.profile.invalid_rules",
+            message = "Profile rules must be an array when provided.",
+        },
+        {
+            field = "constraints",
+            code = "schemas.profile.invalid_constraints",
+            message = "Profile constraints must be an array when provided.",
+        },
+    }
+    for _, entry in ipairs(raw_array_fields) do
+        local issue = validate_optional_array_field(payload, entry.field, entry.code, entry.message)
+        if issue ~= nil then
+            return Result.fail({ issue })
+        end
+    end
+
+    local raw_table_fields = {
+        {
+            field = "transform_settings",
+            code = "schemas.profile.invalid_transform_settings",
+            message = "Profile transform_settings must be a table when provided.",
+        },
+        {
+            field = "generation_strategy_settings",
+            code = "schemas.profile.invalid_generation_strategy_settings",
+            message = "Profile generation_strategy_settings must be a table when provided.",
+        },
+        {
+            field = "analysis_lens_settings",
+            code = "schemas.profile.invalid_analysis_lens_settings",
+            message = "Profile analysis_lens_settings must be a table when provided.",
+        },
+        {
+            field = "metadata",
+            code = "schemas.profile.invalid_metadata",
+            message = "Profile metadata must be a table when provided.",
+        },
+    }
+    for _, entry in ipairs(raw_table_fields) do
+        local issue = validate_optional_table_field(payload, entry.field, entry.code, entry.message)
+        if issue ~= nil then
+            return Result.fail({ issue })
+        end
+    end
+
     local normalized = {
         id = payload.id or Ids.generate("profile"),
         name = payload.name or payload.id or "Unnamed Profile",
@@ -278,6 +535,28 @@ function Schemas.normalize_profile(payload)
                 nil
             ),
         })
+    end
+
+    if not Validation.is_non_empty_string(normalized.name) then
+        return Result.fail({
+            Validation.error("schemas.profile.invalid_name", "Profile name must be a non-empty string.", "name", nil),
+        })
+    end
+
+    if not Validation.is_number(normalized.version) or normalized.version < 1 then
+        return Result.fail({
+            Validation.error("schemas.profile.invalid_version", "Profile version must be a positive number.", "version", nil),
+        })
+    end
+
+    local rules_issue = validate_profile_rules(normalized.rules, "rules")
+    if rules_issue ~= nil then
+        return Result.fail({ rules_issue })
+    end
+
+    local constraints_issue = validate_profile_rules(normalized.constraints, "constraints")
+    if constraints_issue ~= nil then
+        return Result.fail({ constraints_issue })
     end
 
     return Result.ok(normalized)

@@ -12,10 +12,16 @@ Implemented today:
 - Canonical schema normalization helpers and in-memory registries for objects, relationships, analyses, rulesets, and profiles
 - Transform registration and analysis-lens registration seams driven from saved rulesets
 - JSON-safe persistence helpers for project, ruleset, and profile state
+- Project-state import helpers that repopulate live registries from saved snapshots
+- A top-level `main.lua` entry surface for loading rulesets, resetting state, import/export, and direct generate/evaluate/transform orchestration
+- Script-relative module path setup so `main.lua` and the test runner can execute under hosts like REAPER without requiring the repo root as the process working directory
+- Directory-level `ruleset.lua` wrappers for the placeholder ruleset families
+- Stricter ruleset/profile schema validation for optional arrays, settings tables, versions, and analysis-lens entries
+- Formal execution-state tracking for persisted-only rulesets and transforms, with clear non-executable runtime failures
 - Formal `EvaluationContext` and `EvaluationResult` contracts for shared evaluation flow
 - Shared engine entry points for generation and evaluation
 - Placeholder rulesets for counterpoint, serialism, neo-Riemannian work, Schenkerian reduction, and custom extensions
-- A small test suite proving cross-ruleset behavior, persistence round-trips, and the new lockfile-alignment seams
+- A small test suite proving cross-ruleset behavior, packaging entry points, persistence round-trips, and the new lockfile-alignment seams
 
 Not implemented yet:
 
@@ -25,10 +31,11 @@ Not implemented yet:
 ## Repository Layout
 
 ```text
+main.lua        top-level shared entry surface and orchestration facade
 reaform/
   core/       core contracts and validation entry points
   engine/     generic generation and evaluation entry points
-  rulesets/   placeholder domain-specific rulesets
+  rulesets/   placeholder domain-specific rulesets with directory-level wrappers
   tests/      lightweight contract and behavior tests
   utils/      shared validation and result helpers
 ```
@@ -47,7 +54,7 @@ If `lua` is not on `PATH`, a local workspace runtime can also be used:
 .\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua
 ```
 
-The test runner executes the contract suite, the cross-ruleset behavior suite, and the foundation suite for canonical schema normalization, registries, persistence, evaluation contracts, and shared-layer anti-regression checks.
+The test runner executes the contract suite, the cross-ruleset behavior suite, and the foundation suite for canonical schema normalization, stricter ruleset/profile validation, registries, persistence save/load/import behavior, evaluation contracts, and shared-layer anti-regression checks.
 
 ## Documentation
 
@@ -55,6 +62,7 @@ The test runner executes the contract suite, the cross-ruleset behavior suite, a
 - [Status Against Lockfile](docs/status-against-lockfile.md)
 - [Ruleset Authoring](docs/ruleset-authoring.md)
 - [Testing and Contributing](docs/testing-and-contributing.md)
+- [Persistence Migration Notes](docs/persistence-migration.md)
 - [Glossary](docs/glossary.md)
 - [Development Plan](DEVELOPMENT_PLAN.md)
 - [Development Log](DEVELOPMENT_LOG.md)

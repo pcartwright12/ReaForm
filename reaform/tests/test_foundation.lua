@@ -12,9 +12,10 @@ local EvaluationResult = require("reaform.contracts.evaluation_result")
 local EvaluationClassifier = require("reaform.engine.evaluation_classifier")
 local Generator = require("reaform.engine.generator")
 local Evaluator = require("reaform.engine.evaluator")
+local ReaForm = require("main")
 
-local serialism = require("reaform.rulesets.serialism.basic_row")
-local schenkerian = require("reaform.rulesets.schenkerian.basic_reduction")
+local serialism = ReaForm.load_ruleset("serialism")
+local schenkerian = ReaForm.load_ruleset("schenkerian")
 
 local Tests = {}
 
@@ -40,6 +41,22 @@ function Tests.run()
     RuleSetRegistry.reset()
     ProfileRegistry.reset()
     TransformRegistry.reset()
+
+    ReaForm.reset_state()
+    local registered_builtins = ReaForm.register_builtin_rulesets()
+    assert_true(registered_builtins.ok and registered_builtins.data.count == 5, "main should bootstrap built-in rulesets")
+    local exported_from_main = ReaForm.export_project({ purpose = "main-bootstrap-test" })
+    assert_true(exported_from_main.ok and #exported_from_main.data.rulesets == 5, "main should export project snapshots through the orchestration surface")
+    test_count = test_count + 1
+
+    ReaForm.reset_state()
+
+    local registered_from_main = ReaForm.register_ruleset("serialism")
+    assert_true(registered_from_main.ok, "main should register rulesets through the shared registry surface")
+    RuleSetRegistry.reset()
+    TransformRegistry.reset()
+    AnalysisRegistry.reset()
+    test_count = test_count + 1
 
     local normalized_object = Schemas.normalize_object({
         id = "legacy_material",
@@ -152,6 +169,27 @@ function Tests.run()
     assert_true(#loaded_project.data.rulesets == 1, "project persistence should round-trip ruleset state")
     test_count = test_count + 1
 
+    ObjectRegistry.reset()
+    RelationshipGraph.reset()
+    AnalysisRegistry.reset()
+    RuleSetRegistry.reset()
+    ProfileRegistry.reset()
+    TransformRegistry.reset()
+
+    local restored_project = ReaForm.import_project(loaded_project.data)
+    assert_true(restored_project.ok, "persistence should import project state into registries")
+    assert_true(restored_project.data.imported.objects == 1, "project import should restore objects")
+    assert_true(restored_project.data.imported.rulesets == 1, "project import should restore rulesets")
+    local restored_object = ObjectRegistry.get_object("registry_object")
+    assert_true(restored_object.ok and restored_object.data.ruleset_scope == "custom", "project import should restore object state")
+    local restored_ruleset = RuleSetRegistry.get_ruleset(serialism.id)
+    assert_true(restored_ruleset.ok and type(restored_ruleset.data.generator_strategy) == "function", "project import should restore executable rulesets when module_path exists")
+    local restored_transform = TransformRegistry.get_transform("serial.retrograde")
+    assert_true(restored_transform.ok and type(restored_transform.data.transform_function) == "function", "project import should restore executable transforms from live rulesets")
+    local restored_lens = AnalysisRegistry.get_lens("serial.row_form")
+    assert_true(restored_lens.ok and restored_lens.data.ruleset_id == serialism.id, "project import should restore analysis lenses")
+    test_count = test_count + 1
+
     local temp_ruleset_path = Ids.generate("ruleset_state") .. ".json"
     local saved_ruleset_state = Persistence.save_ruleset(temp_ruleset_path, serialism)
     assert_true(saved_ruleset_state.ok, "persistence should save ruleset state")
@@ -172,6 +210,61 @@ function Tests.run()
     assert_true(loaded_profile_state.ok, "persistence should load profile state")
     assert_true(loaded_profile_state.data.version == 3, "profile persistence should preserve version")
     assert_true(loaded_profile_state.data.active_ruleset_id == serialism.id, "profile persistence should preserve ruleset references")
+    test_count = test_count + 1
+
+    local fallback_snapshot = {
+        schema_version = 1,
+        rulesets = {
+            {
+                id = "persisted.only",
+                name = "Persisted Only",
+                domain = "custom",
+                object_types = { "Artifact" },
+                constraints = {},
+                transformations = {},
+                transforms = {},
+                analysis_lenses = {
+                    { id = "persisted.lens", name = "Persisted Lens", ruleset_id = "persisted.only" },
+                },
+                serialization_version = 2,
+            },
+        },
+        transforms = {
+            {
+                id = "persisted.transform",
+                ruleset_id = "persisted.only",
+                input_types = { "Artifact" },
+                output_types = { "Artifact" },
+                has_transform_function = false,
+            },
+        },
+        analysis_lenses = {
+            { id = "persisted.lens", name = "Persisted Lens", ruleset_id = "persisted.only" },
+        },
+    }
+    local fallback_import = Persistence.import_project_state(fallback_snapshot, {
+        reset_registries = true,
+        load_ruleset_modules = false,
+    })
+    assert_true(fallback_import.ok, "project import should support persisted-only ruleset state")
+    local fallback_ruleset = RuleSetRegistry.get_ruleset("persisted.only")
+    assert_true(fallback_ruleset.ok and fallback_ruleset.data.serialization_version == 2, "persisted-only rulesets should restore metadata")
+    local fallback_ruleset_description = RuleSetRegistry.describe_ruleset("persisted.only")
+    assert_true(fallback_ruleset_description.ok and fallback_ruleset_description.data.executable == false, "persisted-only rulesets should expose non-executable state")
+    local fallback_generation = Generator.generate(fallback_ruleset.data, {})
+    assert_true(not fallback_generation.ok and fallback_generation.errors[1].code == "ruleset.not_executable", "persisted-only rulesets should fail generation clearly")
+    local fallback_evaluation = Evaluator.evaluate(fallback_ruleset.data, {})
+    assert_true(not fallback_evaluation.ok and fallback_evaluation.errors[1].code == "ruleset.not_executable", "persisted-only rulesets should fail evaluation clearly")
+    local fallback_transform = TransformRegistry.get_transform("persisted.transform")
+    assert_true(fallback_transform.ok and fallback_transform.data.ruleset_id == "persisted.only", "persisted-only transforms should restore metadata")
+    local fallback_transform_description = TransformRegistry.describe_transform("persisted.transform")
+    assert_true(fallback_transform_description.ok and fallback_transform_description.data.executable == false, "persisted-only transforms should expose non-executable state")
+    local fallback_transform_apply = require("reaform.core.transformation").apply(fallback_transform.data, {}, {})
+    assert_true(not fallback_transform_apply.ok and fallback_transform_apply.errors[1].code == "transformation.not_executable", "persisted-only transforms should fail execution clearly")
+    local described_from_main = ReaForm.describe_ruleset("persisted.only")
+    assert_true(described_from_main ~= nil and described_from_main.execution_state == "persisted_metadata", "main should expose persisted-only ruleset execution state")
+    local resolved_persisted = ReaForm.resolve_ruleset("persisted.only")
+    assert_true(resolved_persisted.ok and resolved_persisted.data.execution_state == "persisted_metadata", "main should resolve persisted-only imported rulesets from the registry")
     test_count = test_count + 1
 
     local core_file = read_file("reaform/core/musical_object.lua")

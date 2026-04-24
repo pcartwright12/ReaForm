@@ -4,7 +4,7 @@ This document compares the current repository to the attached project lockfile. 
 
 ## Summary
 
-The lockfile describes a much broader Phase 1 foundation with registries, richer schemas, more engine services, persistence, profiles, placeholder rulesets for more domains, and broader tests. The current repository now includes the first persistence boundary plus transform and analysis-lens registration seams, but it still remains a smaller proof-of-direction than the full spec.
+The lockfile describes a much broader Phase 1 foundation with registries, richer schemas, more engine services, persistence, profiles, placeholder rulesets for more domains, and broader tests. The current repository now includes the first persistence boundary, a small top-level `main.lua`, and directory-level ruleset wrappers, but it still remains a smaller proof-of-direction than the full spec.
 
 ## Implemented Now
 
@@ -17,6 +17,11 @@ The lockfile describes a much broader Phase 1 foundation with registries, richer
 - In-memory registries for objects, relationships, analyses, rulesets, profiles, and transforms
 - Analysis-lens registration driven from saved rulesets
 - JSON-safe persistence helpers for project, ruleset, and profile state
+- Project-state import helpers that repopulate live registries from saved snapshots
+- A small top-level `main.lua` orchestration surface
+- Directory-level `ruleset.lua` wrappers for the placeholder ruleset families
+- Stricter schema validation for optional ruleset/profile fields that previously normalized malformed data away
+- Formal non-executable execution state for persisted-only imported rulesets and transforms
 - Shared generation entry point via `Generator.generate`
 - Shared evaluation entry point via `Evaluator.evaluate`
 - Formal `EvaluationContext` and `EvaluationResult` contracts wired into the shared evaluator
@@ -29,6 +34,7 @@ The lockfile describes a much broader Phase 1 foundation with registries, richer
 - Tests proving:
   - core contracts validate data
   - shared APIs work across multiple rulesets
+  - wrapper-based ruleset loading through `main.lua`
   - persistence state round-trips
   - transform and analysis-lens registration
   - non-counterpoint rulesets do not require counterpoint engine concepts
@@ -40,7 +46,7 @@ These lockfile goals are present in reduced or incomplete form:
 - Shared core:
   Present, and now includes first-pass registries and normalization helpers, but it is still smaller than the broader core module set from the lockfile.
 - Canonical object schemas:
-  Present through a compatibility-oriented normalization layer, but not every lockfile schema field is enforced with rich domain validation yet.
+  Present through a compatibility-oriented normalization layer, and ruleset/profile validation is stricter than before, but not every lockfile schema field is enforced with rich domain validation yet.
 - Rule and transformation contracts:
   Present for constraints, transformations, and rulesets, and now support persistence-safe transform declarations, but are not split into the full contract files named in the lockfile.
 - Initial engine contracts:
@@ -48,9 +54,11 @@ These lockfile goals are present in reduced or incomplete form:
 - Minimal test scaffolding:
   Present, but smaller than the lockfile test layout and coverage list.
 - Multiple ruleset examples:
-  Present, but with fewer domains and much lighter placeholder content than the target structure.
+  Present, and now wrapped behind directory-level `ruleset.lua` entry points, but still with fewer domains and much lighter placeholder content than the target structure.
 - Persistence boundary:
-  Present for JSON-safe save/load of project, ruleset, and profile state, but still minimal and not yet a full project restoration/orchestration layer.
+  Present for JSON-safe save/load and registry import of project, ruleset, and profile state, with migration notes now documented, but still not yet an implemented migration layer.
+- Top-level boundary:
+  Present as a small `main.lua` orchestration facade with ruleset resolution, bootstrap, import/export, and shared generate/evaluate/transform helpers, but still much smaller than the lockfile's eventual application boundary.
 
 ## Not Yet Implemented
 
@@ -123,7 +131,7 @@ These are useful entry points, but they are not yet the full engine skeleton des
 
 ### Registry And Persistence Delta
 
-The repository now has first-pass registries, transform and analysis-lens registration, and JSON-safe persistence helpers. What is still missing is a fuller restoration story, migration support, and deeper relationship/analysis semantics.
+The repository now has first-pass registries, transform and analysis-lens registration, JSON-safe persistence helpers, project-state import back into live registries, a top-level orchestration facade in `main.lua`, and explicit migration notes describing the intended version-evolution policy. What is still missing is automated migration code, richer module-layer workflows, and deeper relationship/analysis semantics.
 
 ### Ruleset And Profile Delta
 
@@ -136,11 +144,11 @@ The current `RuleSet` contract includes:
 - generation strategy
 - evaluation strategy
 
-The lockfile expects much broader capability declarations, profiles, analysis lenses, scoring models, validation modes, serialization versions, and profile-specific behavior. Those concepts are not yet first-class in the codebase.
+The lockfile expects much broader capability declarations, profiles, analysis lenses, scoring models, validation modes, serialization versions, and profile-specific behavior. The repository now has directory-level ruleset wrappers, a small top-level loader, and a formal non-executable state for persisted-only imported rulesets, but those concepts are still not first-class in the full lockfile sense.
 
 ### Test Delta
 
-The current tests cover contract validation, shared-engine behavior, persistence round-trips, transform registration, analysis-lens registration, and shared-layer anti-regression checks. They do not yet cover:
+The current tests cover contract validation, shared-engine behavior, persistence round-trips, persistence import, transform registration, analysis-lens registration, and shared-layer anti-regression checks. They do not yet cover:
 
 - ruleset registries
 - profile loading

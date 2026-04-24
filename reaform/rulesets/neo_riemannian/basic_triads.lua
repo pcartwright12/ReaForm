@@ -6,7 +6,7 @@ local ruleset = {
     id = "neo_riemannian.basic_triads",
     name = "Neo-Riemannian Basic Triads",
     domain = "transformational",
-    module_path = "reaform.rulesets.neo_riemannian.basic_triads",
+    module_path = "reaform.rulesets.neo_riemannian.ruleset",
     object_types = { "Triad" },
     analysis_lenses = {
         {

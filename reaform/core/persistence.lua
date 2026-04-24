@@ -11,6 +11,29 @@ local TransformRegistry = require("reaform.core.transform_registry")
 
 local Persistence = {}
 
+local function load_ruleset_module(module_path)
+    if not Validation.is_non_empty_string(module_path) then
+        return Result.fail({
+            { code = "persistence.missing_module_path", message = "Persisted RuleSet state does not declare a module_path.", field = "module_path", severity = "error" },
+        })
+    end
+
+    local ok, loaded_or_error = pcall(require, module_path)
+    if not ok then
+        return Result.fail({
+            { code = "persistence.module_load_failed", message = tostring(loaded_or_error), field = "module_path", severity = "error" },
+        })
+    end
+
+    if type(loaded_or_error) ~= "table" then
+        return Result.fail({
+            { code = "persistence.module_invalid", message = "Loaded RuleSet module must return a table.", field = "module_path", severity = "error" },
+        })
+    end
+
+    return Result.ok(loaded_or_error)
+end
+
 local function escape_string(value)
     return value
         :gsub("\\", "\\\\")
@@ -374,6 +397,146 @@ function Persistence.load_project(path)
     end
 
     return Result.ok(decoded_or_error)
+end
+
+function Persistence.import_project_state(snapshot, options)
+    if not Validation.is_table(snapshot) then
+        return Result.fail({
+            { code = "persistence.invalid_snapshot", message = "Project snapshot must be a table.", severity = "error" },
+        })
+    end
+
+    local import_options = Validation.copy_table(options or {})
+    local reset_registries = import_options.reset_registries ~= false
+    local load_ruleset_modules = import_options.load_ruleset_modules ~= false
+    local warnings = {}
+
+    if reset_registries then
+        ObjectRegistry.reset()
+        RelationshipGraph.reset()
+        AnalysisRegistry.reset()
+        RuleSetRegistry.reset()
+        ProfileRegistry.reset()
+        TransformRegistry.reset()
+    end
+
+    local imported_counts = {
+        objects = 0,
+        relationships = 0,
+        analyses = 0,
+        rulesets = 0,
+        profiles = 0,
+        transforms = 0,
+        analysis_lenses = 0,
+    }
+
+    for _, ruleset_state in ipairs(Validation.ensure_array(snapshot.rulesets)) do
+        local imported_result = nil
+
+        if load_ruleset_modules and Validation.is_non_empty_string(ruleset_state.module_path) then
+            local loaded_module = load_ruleset_module(ruleset_state.module_path)
+            if loaded_module.ok then
+                imported_result = RuleSetRegistry.save_ruleset(loaded_module.data)
+            else
+                ruleset_state.execution_state = "persisted_metadata"
+                ruleset_state.execution_error = loaded_module.errors[1] and loaded_module.errors[1].code or "module_load_failed"
+                warnings = Result.merge_warnings(warnings, {
+                    Validation.warning(
+                        "persistence.ruleset_module_fallback",
+                        "Failed to load live RuleSet module; importing persisted RuleSet state instead.",
+                        "module_path",
+                        { ruleset_id = ruleset_state.id, module_path = ruleset_state.module_path, reason = loaded_module.errors[1] and loaded_module.errors[1].message }
+                    ),
+                })
+            end
+        end
+
+        if imported_result == nil then
+            imported_result = RuleSetRegistry.import_ruleset_state(ruleset_state)
+        end
+
+        if not imported_result.ok then
+            return imported_result
+        end
+
+        warnings = Result.merge_warnings(warnings, imported_result.warnings)
+        imported_counts.rulesets = imported_counts.rulesets + 1
+    end
+
+    for _, object_state in ipairs(Validation.ensure_array(snapshot.objects)) do
+        local imported = ObjectRegistry.create_object(object_state.object_type or object_state.type, object_state)
+        if not imported.ok then
+            return imported
+        end
+        warnings = Result.merge_warnings(warnings, imported.warnings)
+        imported_counts.objects = imported_counts.objects + 1
+    end
+
+    for _, relationship_state in ipairs(Validation.ensure_array(snapshot.relationships)) do
+        local imported = RelationshipGraph.store_relationship(relationship_state)
+        if not imported.ok then
+            return imported
+        end
+        warnings = Result.merge_warnings(warnings, imported.warnings)
+        imported_counts.relationships = imported_counts.relationships + 1
+    end
+
+    for _, analysis_state in ipairs(Validation.ensure_array(snapshot.analyses)) do
+        local imported = AnalysisRegistry.store_analysis(analysis_state)
+        if not imported.ok then
+            return imported
+        end
+        warnings = Result.merge_warnings(warnings, imported.warnings)
+        imported_counts.analyses = imported_counts.analyses + 1
+    end
+
+    for _, profile_state in ipairs(Validation.ensure_array(snapshot.profiles)) do
+        local imported = ProfileRegistry.save_profile(profile_state)
+        if not imported.ok then
+            return imported
+        end
+        warnings = Result.merge_warnings(warnings, imported.warnings)
+        imported_counts.profiles = imported_counts.profiles + 1
+    end
+
+    for _, transform_state in ipairs(Validation.ensure_array(snapshot.transforms)) do
+        local existing = TransformRegistry.get_transform(transform_state.id)
+        if not existing.ok then
+            local imported = TransformRegistry.import_transform_state(transform_state)
+            if not imported.ok then
+                return imported
+            end
+            warnings = Result.merge_warnings(warnings, imported.warnings)
+            imported_counts.transforms = imported_counts.transforms + 1
+        end
+    end
+
+    for _, lens_state in ipairs(Validation.ensure_array(snapshot.analysis_lenses)) do
+        local existing = AnalysisRegistry.get_lens(lens_state.id)
+        if not existing.ok then
+            local imported = AnalysisRegistry.register_lens(lens_state.ruleset_id, lens_state)
+            if not imported.ok then
+                return imported
+            end
+            warnings = Result.merge_warnings(warnings, imported.warnings)
+            imported_counts.analysis_lenses = imported_counts.analysis_lenses + 1
+        end
+    end
+
+    return Result.ok({
+        schema_version = snapshot.schema_version or 1,
+        imported = imported_counts,
+        metadata = Validation.copy_table(snapshot.metadata or {}),
+    }, warnings)
+end
+
+function Persistence.load_project_into_registries(path, options)
+    local loaded = Persistence.load_project(path)
+    if not loaded.ok then
+        return loaded
+    end
+
+    return Persistence.import_project_state(loaded.data, options)
 end
 
 function Persistence.save_ruleset(path, ruleset)

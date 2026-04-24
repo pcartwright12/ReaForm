@@ -2,7 +2,7 @@ local ruleset = {
     id = "custom.dummy",
     name = "Dummy Custom RuleSet",
     domain = "custom",
-    module_path = "reaform.rulesets.custom.dummy",
+    module_path = "reaform.rulesets.custom.ruleset",
     object_types = { "DummyObject" },
     analysis_lenses = {
         {

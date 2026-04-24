@@ -4,12 +4,13 @@
 
 The current ReaForm repository is a small, ruleset-driven skeleton. It establishes generic contracts and shared execution flow without implementing the larger lockfile architecture yet.
 
-Today the codebase is organized around five areas:
+Today the codebase is organized around six areas:
 
+- `main.lua`: top-level entry surface for loading rulesets, exposing shared services, and orchestrating common repository flows
 - `reaform/core/`: contract validation, canonical schema normalization, and in-memory registries
 - `reaform/contracts/`: formal evaluation context and evaluation result contracts
 - `reaform/engine/`: shared entry points plus small evaluation dispatch helpers
-- `reaform/rulesets/`: domain-specific example rulesets
+- `reaform/rulesets/`: domain-specific example rulesets with directory-level `ruleset.lua` wrappers
 - `reaform/tests/`: contract and behavior coverage
 - `reaform/utils/`: validation and result helpers used across the repository
 
@@ -99,8 +100,9 @@ The repository also includes in-memory registries for:
 - analyses
 - rulesets
 - profiles
+ - transforms
 
-These are intentionally minimal and exist to establish the lockfile-aligned seams without introducing persistence or orchestration yet.
+These are intentionally minimal and now work alongside JSON-safe persistence save/load/import helpers plus the top-level `main.lua` loading surface.
 
 ## Shared Engine Flow
 
@@ -162,17 +164,40 @@ Provides:
 
 These helpers give the current repository a consistent success and failure shape across core and engine modules.
 
+## Top-Level Entry Surface
+
+`main.lua` now exposes a small repository app facade:
+
+- `ReaForm.load_ruleset(name_or_module_path)`
+- `ReaForm.register_ruleset(name_or_module_path)`
+- `ReaForm.register_builtin_rulesets()`
+- `ReaForm.get_ruleset_module_map()`
+- `ReaForm.resolve_ruleset(candidate)`
+- `ReaForm.resolve_transform(candidate)`
+- `ReaForm.reset_state()`
+- `ReaForm.import_project(project_or_path, options)`
+- `ReaForm.export_project(metadata)`
+- `ReaForm.generate(ruleset_reference, context)`
+- `ReaForm.evaluate(ruleset_reference, context)`
+- `ReaForm.apply_transform(transform_reference, input, context)`
+- `ReaForm.registries`
+- `ReaForm.persistence`
+- `ReaForm.generator`
+- `ReaForm.evaluator`
+
+This is not the full lockfile `main.lua` yet, but it now acts as a small orchestration boundary rather than only a loader: callers can resolve rulesets and transforms, bootstrap built-in rulesets, reset registry state, import/export snapshots, and run shared generate/evaluate/transform flows from one surface.
+
 ## Rulesets
 
 The repository currently includes these example rulesets:
 
-- `counterpoint/species_1.lua`
-- `serialism/basic_row.lua`
-- `neo_riemannian/basic_triads.lua`
-- `schenkerian/basic_reduction.lua`
-- `custom/dummy.lua`
+- `counterpoint/ruleset.lua`
+- `serialism/ruleset.lua`
+- `neo_riemannian/ruleset.lua`
+- `schenkerian/ruleset.lua`
+- `custom/ruleset.lua`
 
-They are placeholders, not full implementations of those domains. Their main architectural purpose is to prove that the same shared engine can host multiple musical systems without hardcoding one of them into the core.
+Each wrapper currently delegates to one placeholder implementation file in its directory. They are placeholders, not full implementations of those domains. Their main architectural purpose is to prove that the same shared engine can host multiple musical systems without hardcoding one of them into the core while moving the repository toward a directory-based packaging model.
 
 ## Architectural Boundaries
 

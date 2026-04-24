@@ -6,6 +6,22 @@ local Schemas = require("reaform.core.schemas")
 
 local RuleSet = {}
 
+local function get_execution_state(candidate)
+    if not Validation.is_table(candidate) then
+        return "invalid"
+    end
+
+    if candidate.execution_state ~= nil then
+        return candidate.execution_state
+    end
+
+    if type(candidate.generator_strategy) == "function" and type(candidate.evaluation_strategy) == "function" then
+        return "executable"
+    end
+
+    return "persisted_metadata"
+end
+
 local REQUIRED_FIELDS = {
     id = "string",
     name = "string",
@@ -108,6 +124,32 @@ function RuleSet.validate(candidate)
     end
 
     return Result.ok(Validation.copy_table(normalized.data), warnings)
+end
+
+function RuleSet.get_execution_state(candidate)
+    return get_execution_state(candidate)
+end
+
+function RuleSet.is_executable(candidate)
+    return get_execution_state(candidate) == "executable"
+end
+
+function RuleSet.require_executable(candidate, field_name)
+    if RuleSet.is_executable(candidate) then
+        return Result.ok(candidate)
+    end
+
+    return Result.fail({
+        Validation.error(
+            "ruleset.not_executable",
+            "RuleSet cannot execute because it was imported as persisted metadata without live hooks.",
+            field_name or "module_path",
+            {
+                ruleset_id = type(candidate) == "table" and candidate.id or nil,
+                execution_state = get_execution_state(candidate),
+            }
+        ),
+    })
 end
 
 function RuleSet.normalize(candidate)

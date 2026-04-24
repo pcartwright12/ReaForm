@@ -1,8 +1,31 @@
-package.path = table.concat({
-    "./?.lua",
-    "./?/init.lua",
-    package.path,
-}, ";")
+local function get_script_directory()
+    local source = debug.getinfo(1, "S").source
+    if type(source) ~= "string" or source:sub(1, 1) ~= "@" then
+        return "."
+    end
+
+    local script_path = source:sub(2)
+    local normalized = script_path:gsub("\\", "/")
+    local directory = normalized:match("^(.*)/[^/]+$")
+    return directory or "."
+end
+
+local function get_repository_root(script_directory)
+    local root = script_directory:gsub("/reaform/tests$", "")
+    return root ~= "" and root or "."
+end
+
+local function prepend_package_path(base_directory)
+    package.path = table.concat({
+        base_directory .. "/?.lua",
+        base_directory .. "/?/init.lua",
+        "./?.lua",
+        "./?/init.lua",
+        package.path,
+    }, ";")
+end
+
+prepend_package_path(get_repository_root(get_script_directory()))
 
 local suites = {
     (require("reaform.tests.test_contracts")),

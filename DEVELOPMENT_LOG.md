@@ -173,3 +173,192 @@
   - [ ] Tighten schema validation and broader packaging work from the remaining plan items.
 - Next step:
   - [ ] Continue with `main.lua` and/or ruleset packaging and restoration work.
+
+## 2026-04-24T11:06:15.1735792-05:00
+
+- Files changed:
+  - `reaform/core/ruleset_registry.lua`
+  - `reaform/core/transform_registry.lua`
+  - `reaform/core/persistence.lua`
+  - `reaform/tests/test_foundation.lua`
+  - `README.md`
+  - `docs/status-against-lockfile.md`
+  - `docs/testing-and-contributing.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: added project-state import into live registries, including executable ruleset restoration through `module_path` when available and persisted-only fallback import paths for rulesets and transforms when executable hooks are absent; expanded the foundation suite to verify both live-module restore and persisted-only metadata restore behavior.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 25 total tests.
+- Status:
+  - [x] Project-state import added.
+  - [x] Executable ruleset restoration from persisted `module_path` added.
+  - [x] Persisted-only fallback import for rulesets/transforms added.
+  - [x] Restore/import coverage added to the foundation suite.
+- Outstanding:
+  - [ ] Decide whether persisted-only imported rulesets need a formal non-executable state marker/API beyond warning-based metadata import.
+  - [ ] Tighten schema validation and broader packaging work from the remaining plan items.
+- Next step:
+  - [ ] Continue with `main.lua` and/or ruleset packaging work, then revisit migration notes and persisted-only ruleset ergonomics.
+
+## 2026-04-24T11:06:15.1735792-05:00 (packaging follow-up)
+
+- Files changed:
+  - `main.lua`
+  - `reaform/rulesets/counterpoint/ruleset.lua`
+  - `reaform/rulesets/serialism/ruleset.lua`
+  - `reaform/rulesets/neo_riemannian/ruleset.lua`
+  - `reaform/rulesets/schenkerian/ruleset.lua`
+  - `reaform/rulesets/custom/ruleset.lua`
+  - `reaform/rulesets/counterpoint/species_1.lua`
+  - `reaform/rulesets/serialism/basic_row.lua`
+  - `reaform/rulesets/neo_riemannian/basic_triads.lua`
+  - `reaform/rulesets/schenkerian/basic_reduction.lua`
+  - `reaform/rulesets/custom/dummy.lua`
+  - `reaform/tests/test_behavior.lua`
+  - `reaform/tests/test_foundation.lua`
+  - `README.md`
+  - `docs/architecture.md`
+  - `docs/ruleset-authoring.md`
+  - `docs/status-against-lockfile.md`
+  - `docs/testing-and-contributing.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: added a small top-level `main.lua` entry surface, introduced directory-level `ruleset.lua` wrappers for the placeholder ruleset families, switched placeholder `module_path` values to the wrapper-based load paths, updated tests to exercise `main.lua` loading/registration, and refreshed repository docs to describe the new packaging boundary.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 27 total tests.
+- Status:
+  - [x] Top-level `main.lua` entry surface added.
+  - [x] Directory-level ruleset wrapper modules added.
+  - [x] Ruleset persistence now points at wrapper-based `module_path` values.
+  - [x] Packaging entry points covered in runtime tests.
+- Outstanding:
+  - [ ] Decide whether the new `main.lua` surface should stay as a thin loader or start absorbing more lockfile-facing application wiring.
+  - [ ] Tighten schema validation and persisted-only ruleset ergonomics from the remaining plan items.
+- Next step:
+  - [ ] Revisit schema validation and the non-executable persisted-ruleset API, then decide how much more responsibility `main.lua` should own.
+
+## 2026-04-24T13:43:36.9793428-05:00
+
+- Files changed:
+  - `reaform/core/schemas.lua`
+  - `reaform/tests/test_contracts.lua`
+  - `README.md`
+  - `docs/ruleset-authoring.md`
+  - `docs/testing-and-contributing.md`
+  - `docs/status-against-lockfile.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: tightened ruleset/profile schema validation beyond normalization defaults by rejecting malformed optional arrays, malformed settings tables, invalid version/module-path values, and malformed analysis-lens entries; added contract tests covering those failure cases and fixed the empty-JSON-object edge case so persisted profile/settings tables still round-trip through restore/import.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 31 total tests.
+- Status:
+  - [x] Ruleset/profile schema validation tightened.
+  - [x] Contract tests added for malformed optional schema fields.
+  - [x] Persistence round-trip compatibility preserved for empty JSON object settings.
+- Outstanding:
+  - [ ] Decide whether persisted-only imported rulesets should gain a formal non-executable state marker/API beyond warning-based metadata import.
+  - [ ] Decide whether the new `main.lua` surface should stay as a thin loader or start absorbing more lockfile-facing application wiring.
+- Next step:
+  - [ ] Revisit the persisted-only ruleset API and the ownership boundary of `main.lua`.
+
+## 2026-04-24T14:08:37.9036356-05:00
+
+- Files changed:
+  - `reaform/core/ruleset.lua`
+  - `reaform/core/ruleset_registry.lua`
+  - `reaform/core/transform_registry.lua`
+  - `reaform/core/transformation.lua`
+  - `reaform/core/persistence.lua`
+  - `reaform/engine/generator.lua`
+  - `reaform/engine/evaluator.lua`
+  - `main.lua`
+  - `reaform/tests/test_behavior.lua`
+  - `reaform/tests/test_foundation.lua`
+  - `README.md`
+  - `docs/ruleset-authoring.md`
+  - `docs/testing-and-contributing.md`
+  - `docs/status-against-lockfile.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: formalized persisted-only imported rulesets and transforms as a first-class non-executable state, added registry and top-level inspection helpers for execution status, and changed generation/evaluation/transformation execution paths to fail with explicit `ruleset.not_executable` and `transformation.not_executable` errors instead of generic missing-hook failures.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 31 total tests.
+- Status:
+  - [x] Persisted-only ruleset non-executable state/API added.
+  - [x] Persisted-only transform non-executable state/API added.
+  - [x] Clear runtime failures added for non-executable metadata-only artifacts.
+  - [x] Execution-state inspection exposed through registries and `main.lua`.
+- Outstanding:
+  - [ ] Decide whether the new `main.lua` surface should stay as a thin loader or start absorbing more lockfile-facing application wiring.
+  - [ ] Continue reconciling any remaining doc/code drift and future migration notes.
+- Next step:
+  - [ ] Decide how much more responsibility `main.lua` should own.
+
+## 2026-04-24T14:15:56.1285070-05:00
+
+- Files changed:
+  - `main.lua`
+  - `reaform/tests/test_behavior.lua`
+  - `reaform/tests/test_foundation.lua`
+  - `README.md`
+  - `docs/architecture.md`
+  - `docs/ruleset-authoring.md`
+  - `docs/status-against-lockfile.md`
+  - `docs/testing-and-contributing.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: expanded `main.lua` from a thin loader into a small orchestration facade that can reset repository state, bootstrap built-in rulesets, resolve rulesets and transforms, import/export project snapshots, and run shared generate/evaluate/transform flows from one top-level surface; added runtime tests for the new orchestration helpers and updated docs to describe the new boundary.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 33 total tests.
+- Status:
+  - [x] `main.lua` ownership boundary decided in favor of a small orchestration facade.
+  - [x] Top-level reset/bootstrap/resolve/import/export/run helpers added.
+  - [x] Runtime coverage added for the new top-level orchestration surface.
+- Outstanding:
+  - [ ] Add migration notes.
+  - [ ] Continue reconciling any remaining doc/code drift.
+- Next step:
+  - [ ] Add migration notes and clarify the persistence-version evolution story.
+
+## 2026-04-24T15:48:48.4944937-05:00
+
+- Files changed:
+  - `main.lua`
+  - `reaform/tests/runner.lua`
+  - `README.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: fixed top-level Lua module loading so `main.lua` and the test runner prepend script-relative package paths instead of assuming the host process working directory is the repository root, which makes REAPER-hosted execution work without manual cwd setup.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 33 total tests.
+- Status:
+  - [x] Script-relative module loading added for `main.lua`.
+  - [x] Script-relative module loading added for the test runner.
+  - [x] REAPER-style non-repository cwd execution path handled at the top-level script boundary.
+- Outstanding:
+  - [ ] Add migration notes.
+  - [ ] Continue reconciling any remaining doc/code drift.
+- Next step:
+  - [ ] Add migration notes and clarify the persistence-version evolution story.
+
+## 2026-04-24T15:58:00-05:00
+
+- Files changed:
+  - `docs/persistence-migration.md`
+  - `README.md`
+  - `docs/status-against-lockfile.md`
+  - `docs/testing-and-contributing.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: added explicit persistence migration notes covering current version fields, current non-migrating runtime behavior, intended reject-vs-migrate policy, suggested future migration module layout, and testing expectations; updated repository docs and planning artifacts to treat migration notes as complete while leaving migration implementation itself as the next persistence slice.
+- Validation command run: `rg -n "migration|schema_version|serialization_version" README.md docs DEVELOPMENT_PLAN.md DEVELOPMENT_LOG.md`
+- Result: passed; confirmed the new migration-notes document and aligned references across the repository docs and planning files.
+- Status:
+  - [x] Persistence migration notes documented.
+  - [x] Current non-migrating runtime behavior documented explicitly.
+  - [x] Future reject-vs-migrate policy documented for project, ruleset, and profile state.
+- Outstanding:
+  - [ ] Implement version-aware persistence migration dispatch and rejection rules.
+  - [ ] Continue reconciling any remaining doc/code drift.
+- Next step:
+  - [ ] Implement version-aware persistence migration dispatch and unsupported-version rejection behavior.

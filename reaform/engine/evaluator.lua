@@ -10,6 +10,11 @@ local EvaluationClassifier = require("reaform.engine.evaluation_classifier")
 local Evaluator = {}
 
 function Evaluator.evaluate(ruleset, context)
+    local executable = RuleSet.require_executable(ruleset, "evaluation_strategy")
+    if not executable.ok then
+        return executable
+    end
+
     local checked = RuleSet.normalize(ruleset)
     if not checked.ok then
         return Result.fail(checked.errors, checked.warnings)
