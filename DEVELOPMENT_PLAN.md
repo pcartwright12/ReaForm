@@ -47,33 +47,41 @@ Obvious gaps:
 
 ### Phase 0: Safety And Validation
 
-- Preserve current public entry points and legacy shapes.
-- Expand architecture tests before deeper refactors.
-- Record runtime validation blockers and exact command results.
+- Status:
+  - [x] Preserve current public entry points and legacy shapes.
+  - [x] Expand architecture tests before deeper refactors.
+  - [x] Record runtime validation blockers and exact command results.
+  - [ ] Unblock runtime Lua validation.
 
 ### Phase 1: Core Model Alignment
 
-- Introduce canonical schema normalization for objects, rulesets, profiles, and evaluation payloads.
-- Add in-memory registries for objects, relationships, analyses, rulesets, and profiles.
-- Keep shared APIs thin and compatibility-oriented.
+- Status:
+  - [x] Introduce canonical schema normalization for objects, rulesets, profiles, and evaluation payloads.
+  - [x] Add in-memory registries for objects, relationships, analyses, rulesets, and profiles.
+  - [x] Keep shared APIs thin and compatibility-oriented.
+  - [ ] Add persistence-backed storage for these seams.
 
 ### Phase 2: Engine Contract Alignment
 
-- Continue decomposing evaluation/generation internals only where clear value exists.
-- Extend formal result classification and shared strategy dispatch.
-- Add transform and analysis registration seams without hardcoding domain semantics.
+- Status:
+  - [x] Continue decomposing evaluation/generation internals where immediately useful.
+  - [x] Extend formal result classification and shared strategy dispatch.
+  - [ ] Add transform registration seams.
+  - [ ] Add analysis registration seams beyond the minimal registry boundary.
 
 ### Phase 3: Persistence And Packaging
 
-- Add versioned persistence for project, ruleset, and profile state.
-- Gradually expand ruleset packaging structure without cosmetic churn.
-- Add serialization coverage and migration notes.
+- Status:
+  - [ ] Add versioned persistence for project, ruleset, and profile state.
+  - [ ] Gradually expand ruleset packaging structure without cosmetic churn.
+  - [ ] Add serialization coverage and migration notes.
 
 ### Phase 4: Validation And Polish
 
-- Improve test breadth once a Lua runtime is available in the environment.
-- Reconcile remaining doc/code drift.
-- Tighten acceptance coverage for registries, persistence, and multi-ruleset loading.
+- Status:
+  - [ ] Improve test breadth once a Lua runtime is available in the environment.
+  - [ ] Reconcile remaining doc/code drift.
+  - [ ] Tighten acceptance coverage for registries, persistence, and multi-ruleset loading.
 
 ## Task Breakdown
 
@@ -81,7 +89,10 @@ Obvious gaps:
 
 - Goal: capture the repository audit, phase ordering, and validation history in-repo.
 - Affected files: `DEVELOPMENT_PLAN.md`, `DEVELOPMENT_LOG.md`
-- Implementation steps: summarize current architecture, build alignment matrix, record command evidence and blockers.
+- Implementation steps:
+  - [x] Summarize current architecture.
+  - [x] Build alignment matrix.
+  - [x] Record command evidence and blockers.
 - Tests or validation: static document review.
 - Acceptance criteria: both files exist and reflect current code.
 - Dependencies: repository audit.
@@ -91,7 +102,11 @@ Obvious gaps:
 
 - Goal: add richer internal normalization without breaking legacy public shapes.
 - Affected files: `reaform/core/schemas.lua`, `reaform/core/musical_object.lua`, `reaform/core/ruleset.lua`, `reaform/core/ids.lua`
-- Implementation steps: normalize legacy objects/rulesets into canonical structures, preserve compatibility aliases, add evaluation context/result normalization.
+- Implementation steps:
+  - [x] Normalize legacy objects into canonical structures.
+  - [x] Normalize legacy rulesets into canonical structures.
+  - [x] Preserve compatibility aliases.
+  - [x] Add evaluation context/result normalization.
 - Tests or validation: foundation tests for legacy normalization and formal evaluation payloads.
 - Acceptance criteria: existing object/ruleset entry points still work and new normalization helpers exist.
 - Dependencies: shared validation helpers.
@@ -101,7 +116,12 @@ Obvious gaps:
 
 - Goal: provide lockfile-aligned seams for stored shared state.
 - Affected files: `reaform/core/object_registry.lua`, `reaform/core/relationship_graph.lua`, `reaform/core/analysis_registry.lua`, `reaform/core/ruleset_registry.lua`, `reaform/core/profile_registry.lua`
-- Implementation steps: add in-memory create/get/update/list style APIs with schema-backed normalization.
+- Implementation steps:
+  - [x] Add in-memory object registry APIs.
+  - [x] Add relationship registry APIs.
+  - [x] Add analysis registry APIs.
+  - [x] Add ruleset registry APIs.
+  - [x] Add profile registry APIs.
 - Tests or validation: foundation tests covering create/query/update flows.
 - Acceptance criteria: thin registry APIs exist and round-trip their stored values in memory.
 - Dependencies: canonical schemas.
@@ -111,7 +131,12 @@ Obvious gaps:
 
 - Goal: move evaluator internals toward declared contracts without changing ruleset semantics.
 - Affected files: `reaform/contracts/evaluation_context.lua`, `reaform/contracts/evaluation_result.lua`, `reaform/engine/evaluator.lua`, `reaform/engine/evaluation_classifier.lua`, `reaform/engine/constraint_evaluator.lua`, `reaform/engine/strategy_dispatcher.lua`, `reaform/engine/generator.lua`
-- Implementation steps: formalize evaluation context/result creation, add classifier/dispatcher helpers, keep current ruleset hooks intact.
+- Implementation steps:
+  - [x] Formalize evaluation context creation.
+  - [x] Formalize evaluation result creation.
+  - [x] Add classifier helper.
+  - [x] Add dispatcher helper.
+  - [x] Keep current ruleset hooks intact.
 - Tests or validation: behavior and foundation coverage for classification and Schenkerian execution.
 - Acceptance criteria: evaluator returns normalized evaluation data while current rulesets still use the same shared APIs.
 - Dependencies: canonical schemas.
@@ -121,7 +146,11 @@ Obvious gaps:
 
 - Goal: complete missing placeholder coverage and lock in non-counterpoint assumptions.
 - Affected files: `reaform/rulesets/schenkerian/basic_reduction.lua`, `reaform/tests/test_foundation.lua`, `reaform/tests/runner.lua`
-- Implementation steps: add Schenkerian placeholder, add registry/contract tests, add static shared-layer anti-regression checks.
+- Implementation steps:
+  - [x] Add Schenkerian placeholder.
+  - [x] Add registry and contract tests.
+  - [x] Add static shared-layer anti-regression checks.
+  - [ ] Execute the repository test runner with a Lua runtime.
 - Tests or validation: repository test runner once Lua is available; static review now.
 - Acceptance criteria: new ruleset and suite are present and integrated into the runner.
 - Dependencies: shared evaluator and generator.
@@ -138,14 +167,14 @@ Obvious gaps:
 
 ## Immediate Next Actions
 
-1. Restore executable validation by installing or exposing a Lua interpreter on `PATH`.
-2. Add minimal persistence helpers for project, ruleset, and profile state.
-3. Expand tests to cover persistence round-trips and ruleset/profile serialization versions.
-4. Add transform registration and analysis-lens registration seams.
-5. Introduce a small `main.lua` or equivalent shared entry surface if the repo wants a lockfile-style top-level boundary.
-6. Decide whether ruleset directories should start gaining `ruleset.lua` wrappers now or wait until persistence/registry loading is in place.
-7. Tighten ruleset/profile schema validation beyond normalization defaults.
-8. Re-run and record the full Lua suite once runtime is available.
+- [ ] Restore executable validation by installing or exposing a Lua interpreter on `PATH`.
+- [ ] Add minimal persistence helpers for project, ruleset, and profile state.
+- [ ] Expand tests to cover persistence round-trips and ruleset/profile serialization versions.
+- [ ] Add transform registration and analysis-lens registration seams.
+- [ ] Introduce a small `main.lua` or equivalent shared entry surface if the repo wants a lockfile-style top-level boundary.
+- [ ] Decide whether ruleset directories should start gaining `ruleset.lua` wrappers now or wait until persistence/registry loading is in place.
+- [ ] Tighten ruleset/profile schema validation beyond normalization defaults.
+- [ ] Re-run and record the full Lua suite once runtime is available.
 
 ## Assumptions And Defaults
 
