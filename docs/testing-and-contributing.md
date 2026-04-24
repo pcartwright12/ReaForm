@@ -57,6 +57,17 @@ These tests are intentionally small, but they enforce the current architectural 
 - When adding a ruleset, prefer proving compatibility through the shared APIs instead of adding special-case engine branches.
 - When expanding contracts, document the difference between current implementation and lockfile target state.
 
+## Mandatory AI Edit Tracking Rule
+
+When an AI agent edits any file in this repository, it must update both `DEVELOPMENT_PLAN.md` and `DEVELOPMENT_LOG.md` in the same change set.
+
+Required minimum:
+
+- `DEVELOPMENT_PLAN.md`: add or update status/next-step information that reflects the change.
+- `DEVELOPMENT_LOG.md`: append a timestamped entry with files changed, summary, validation run (or `not run`), and next step.
+
+Changes are considered incomplete if either file is not updated.
+
 ## Naming Guidance
 
 - Use `ReaForm` in project-facing documentation and new code.
@@ -70,3 +81,4 @@ These tests are intentionally small, but they enforce the current architectural 
 3. Read [Status Against Lockfile](status-against-lockfile.md) before implementing lockfile-driven work.
 4. Update or add tests when changing shared contracts or engine flow.
 5. Keep documentation aligned with actual file names and current behavior.
+6. If an AI edits the repository, require updates to both `DEVELOPMENT_PLAN.md` and `DEVELOPMENT_LOG.md` before completion.

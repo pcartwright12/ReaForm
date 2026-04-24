@@ -97,3 +97,23 @@
   - [ ] Rerun the repository test runner immediately after Lua becomes available.
 - Next step:
   - [ ] Rerun the repository test runner immediately after Lua becomes available.
+
+## 2026-04-24T07:46:01.0209812-05:00
+
+- Files changed:
+  - `.github/copilot-instructions.md`
+  - `docs/testing-and-contributing.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: added a mandatory policy requiring AI-driven repository edits to update both `DEVELOPMENT_PLAN.md` and `DEVELOPMENT_LOG.md` in the same change set, and added matching contributor workflow guidance.
+- Validation command run: PowerShell `Select-String` over `.github/copilot-instructions.md`, `docs/testing-and-contributing.md`, and `DEVELOPMENT_PLAN.md` for policy headings.
+- Result: passed; confirmed policy entries exist in all expected files.
+- Status:
+  - [x] Repository-level AI instruction added.
+  - [x] Contributor workflow rule added.
+  - [x] Development plan updated with policy task.
+  - [x] Development log updated with policy rollout.
+- Outstanding:
+  - [ ] Enforce this policy in PR review/checklist process if stricter automation is desired.
+- Next step:
+  - [ ] Optionally add a CI or pre-commit check that verifies both tracking files are modified whenever repository files change.

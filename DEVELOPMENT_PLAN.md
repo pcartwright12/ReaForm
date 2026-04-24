@@ -85,6 +85,19 @@ Obvious gaps:
 
 ## Task Breakdown
 
+### Task 0: AI Edit-Tracking Policy
+
+- Goal: ensure all AI-driven repository edits keep planning and logging artifacts synchronized.
+- Affected files: `.github/copilot-instructions.md`, `docs/testing-and-contributing.md`, `DEVELOPMENT_PLAN.md`, `DEVELOPMENT_LOG.md`
+- Implementation steps:
+  - [x] Add repository-level Copilot instruction requiring plan/log updates for every AI edit.
+  - [x] Add contributor-facing rule in testing/contributing guidance.
+  - [x] Record the policy rollout in the development log.
+- Tests or validation: static review of policy text and cross-file consistency.
+- Acceptance criteria: rule is documented in both AI instructions and contributor workflow docs.
+- Dependencies: none.
+- Rollback notes: remove policy sections if project governance changes.
+
 ### Task 1: Plan And Log Artifacts
 
 - Goal: capture the repository audit, phase ordering, and validation history in-repo.
