@@ -6,8 +6,15 @@
 - Summary of change: completed repository review across README, architecture/status/authoring/testing docs, core modules, engine modules, rulesets, and tests; confirmed the documented `lua reaform/tests/runner.lua` command is the intended validation entry point.
 - Validation command run: `lua reaform/tests/runner.lua`
 - Result: failed at shell boundary because `lua` is not installed or not available on `PATH` in this environment.
-- Known issues: runtime validation is blocked until a Lua interpreter is available.
-- Next step: implement compatibility seams, minimal registries, formal evaluation contracts, and expanded tests while documenting the blocker.
+- Status:
+  - [x] Repository review completed.
+  - [x] Validation entry point identified.
+  - [ ] Runtime validation unblocked.
+- Outstanding:
+  - [ ] Install or expose a Lua interpreter on `PATH`.
+  - [ ] Run the repository test runner successfully.
+- Next step:
+  - [x] Implement compatibility seams, minimal registries, formal evaluation contracts, and expanded tests while documenting the blocker.
 
 ## 2026-04-24T07:40:00-05:00
 
@@ -41,8 +48,20 @@
 - Summary of change: added compatibility-oriented canonical schema normalization, minimal in-memory registries, formal evaluation context/result contracts, shared evaluator/generator dispatch seams, the missing Schenkerian placeholder ruleset, a new foundation test suite, and updated current-state documentation.
 - Validation command run: `rg -n "EvaluationContext|EvaluationResult|ObjectRegistry|RuleSetRegistry|ProfileRegistry|schenkerian" reaform README.md docs`
 - Result: passed; confirmed new modules, tests, ruleset, and docs are wired into the repository.
-- Known issues: runtime Lua execution is still blocked, so syntax/runtime correctness is not yet verified by the test runner.
-- Next step: perform final static sanity checks, then re-run command-discovery evidence and record the final blocker state.
+- Status:
+  - [x] Canonical schema normalization added.
+  - [x] In-memory registries added.
+  - [x] Formal evaluation context/result contracts added.
+  - [x] Shared evaluator/generator dispatch seams added.
+  - [x] Schenkerian placeholder ruleset added.
+  - [x] Foundation test suite added.
+  - [x] Current-state docs updated.
+  - [ ] Runtime Lua test suite executed.
+- Outstanding:
+  - [ ] Verify syntax/runtime correctness with the Lua test runner.
+  - [ ] Record final command-discovery evidence for the runtime blocker.
+- Next step:
+  - [x] Perform final static sanity checks, then re-run command-discovery evidence and record the final blocker state.
 
 ## 2026-04-24T07:44:00-05:00
 
@@ -52,8 +71,15 @@
 - Summary of change: recorded final static verification results and clarified the runner coverage in the README.
 - Validation command run: `rg -n "cantus|species|counterpoint|consonance|dissonance|against" reaform/core reaform/engine`
 - Result: passed with no matches in shared core or engine code.
-- Known issues: `lua` remains unavailable in the shell environment.
-- Next step: install or expose a Lua interpreter and run `lua reaform/tests/runner.lua`.
+- Status:
+  - [x] Shared-layer banned-term scan completed.
+  - [x] Shared core and engine remained ruleset-generic in the static scan.
+  - [ ] Lua runtime available in shell environment.
+- Outstanding:
+  - [ ] Install or expose a Lua interpreter.
+  - [ ] Run `lua reaform/tests/runner.lua`.
+- Next step:
+  - [ ] Install or expose a Lua interpreter and run `lua reaform/tests/runner.lua`.
 
 ## 2026-04-24T07:44:10-05:00
 
@@ -62,5 +88,12 @@
 - Summary of change: recorded runtime command-discovery evidence after implementation.
 - Validation command run: PowerShell `Get-Command` scan for `lua`, `luajit`, `lua54`, `lua53`, and `lua52`
 - Result: passed; confirmed `lua-not-found`.
-- Known issues: repository runtime tests remain blocked by missing interpreter.
-- Next step: rerun the repository test runner immediately after Lua becomes available.
+- Status:
+  - [x] Command-discovery scan completed.
+  - [x] Missing Lua runtime confirmed.
+  - [ ] Repository runtime tests executed.
+- Outstanding:
+  - [ ] Make any supported Lua interpreter available in the shell.
+  - [ ] Rerun the repository test runner immediately after Lua becomes available.
+- Next step:
+  - [ ] Rerun the repository test runner immediately after Lua becomes available.
