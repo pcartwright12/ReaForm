@@ -52,7 +52,10 @@ These tests are intentionally small, but they enforce the current architectural 
 - transform registration and analysis-lens registration through saved rulesets
 - JSON-safe persistence round-trips for project, ruleset, and profile state
 - project-state import back into live registries, with executable ruleset restoration when `module_path` resolves
+- version-aware project/ruleset migration dispatch, including `v1 -> v2` upgrades and rejection of unsupported future versions
 - top-level `main.lua` import/export and reset-state orchestration
+- workflow/controller actions for ruleset selection, generate/evaluate/transform flows, object listing, and session-state retention
+- non-REAPER smoke coverage for the `reaper/gui_main.lua` interactive entry module
 - top-level `main.lua` registration through the shared ruleset registry surface
 - persisted-only ruleset/transform execution-state reporting and clear non-executable failures
 - formal evaluation context and evaluation result contracts
@@ -90,6 +93,7 @@ Changes are considered incomplete if either file is not updated.
 2. Read [Architecture](architecture.md) for the current code shape.
 3. Read [Status Against Lockfile](status-against-lockfile.md) before implementing lockfile-driven work.
 4. Read [Persistence Migration Notes](persistence-migration.md) before changing persistence version fields or import behavior.
-5. Update or add tests when changing shared contracts or engine flow.
-6. Keep documentation aligned with actual file names and current behavior.
-7. If an AI edits the repository, require updates to both `DEVELOPMENT_PLAN.md` and `DEVELOPMENT_LOG.md` before completion.
+5. Read [Interactive Loop Plan](interactive-loop-plan.md) before starting workflow/controller or REAPER GUI work.
+6. Update or add tests when changing shared contracts or engine flow.
+7. Keep documentation aligned with actual file names and current behavior.
+8. If an AI edits the repository, require updates to both `DEVELOPMENT_PLAN.md` and `DEVELOPMENT_LOG.md` before completion.

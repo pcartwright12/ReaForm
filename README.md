@@ -14,7 +14,10 @@ Implemented today:
 - JSON-safe persistence helpers for project, ruleset, and profile state
 - Project-state import helpers that repopulate live registries from saved snapshots
 - A top-level `main.lua` entry surface for loading rulesets, resetting state, import/export, and direct generate/evaluate/transform orchestration
+- A workflow/controller layer in `reaform/workflows/session_workflow.lua` for GUI-safe actions and session state
+- A minimal REAPER GUI entry script at `reaper/gui_main.lua` for ruleset selection, generate/evaluate/transform actions, and output inspection
 - Script-relative module path setup so `main.lua` and the test runner can execute under hosts like REAPER without requiring the repo root as the process working directory
+- Version-aware persistence migration dispatch for project snapshots and persisted ruleset state, including real `v1 -> v2` upgrades and clear rejection of unsupported future versions
 - Directory-level `ruleset.lua` wrappers for the placeholder ruleset families
 - Stricter ruleset/profile schema validation for optional arrays, settings tables, versions, and analysis-lens entries
 - Formal execution-state tracking for persisted-only rulesets and transforms, with clear non-executable runtime failures
@@ -25,8 +28,9 @@ Implemented today:
 
 Not implemented yet:
 
-- Persistence, module-layer workflows, and the broader multi-engine architecture from the lockfile
-- UI, orchestration, and advanced generation or analysis workflows
+- Module-layer workflows and the broader multi-engine architecture from the lockfile
+- Richer REAPER GUI presentation and UX refinement beyond the first interactive loop
+- Advanced generation or analysis workflows
 
 ## Repository Layout
 
@@ -38,6 +42,8 @@ reaform/
   rulesets/   placeholder domain-specific rulesets with directory-level wrappers
   tests/      lightweight contract and behavior tests
   utils/      shared validation and result helpers
+  workflows/  GUI-safe workflow/controller modules
+reaper/        minimal REAPER-hosted GUI entry scripts
 ```
 
 ## Running Tests
@@ -63,6 +69,7 @@ The test runner executes the contract suite, the cross-ruleset behavior suite, a
 - [Ruleset Authoring](docs/ruleset-authoring.md)
 - [Testing and Contributing](docs/testing-and-contributing.md)
 - [Persistence Migration Notes](docs/persistence-migration.md)
+- [Interactive Loop Plan](docs/interactive-loop-plan.md)
 - [Glossary](docs/glossary.md)
 - [Development Plan](DEVELOPMENT_PLAN.md)
 - [Development Log](DEVELOPMENT_LOG.md)

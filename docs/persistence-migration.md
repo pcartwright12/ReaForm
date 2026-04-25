@@ -1,6 +1,6 @@
 # Persistence Migration Notes
 
-This document defines the current migration story for persisted ReaForm data. It is intentionally modest: the repository has version fields and persistence helpers today, but it does not yet implement automated migration functions.
+This document defines the current migration story for persisted ReaForm data. The repository now includes first-pass migration dispatch for project snapshots and persisted ruleset state, including explicit `v1 -> v2` upgrade steps.
 
 The goal of these notes is to keep future persistence work coherent and to make the current behavior explicit.
 
@@ -16,29 +16,29 @@ Related domain objects also carry `version` fields inside normalized schemas, bu
 
 Current defaults in code:
 
-- project snapshots default to `schema_version = 1`
-- rulesets default to `serialization_version = 1`
+- project snapshots default to `schema_version = 2`
+- rulesets default to `serialization_version = 2`
 - rulesets also default to `version = 1`
 - profiles default to `version = 1`
 
 ## Current Runtime Behavior
 
-Today the repository does not perform version branching or automated migrations during load/import.
-
 Current behavior:
 
-- `Persistence.save_project(...)` writes project snapshots with `schema_version = 1`
-- `Persistence.load_project(...)` decodes JSON but does not validate snapshot versions
-- `Persistence.import_project_state(...)` accepts snapshots without checking `schema_version`
+- `Persistence.save_project(...)` writes project snapshots with `schema_version = 2`
+- `Persistence.load_project(...)` decodes JSON and dispatches through project migration validation
+- `Persistence.import_project_state(...)` dispatches through project migration validation before registry import
 - `Persistence.save_ruleset(...)` writes whatever `serialization_version` the normalized ruleset declares
+- `Persistence.load_ruleset(...)` dispatches through ruleset-state migration validation before returning data
 - `Persistence.save_profile(...)` writes whatever `version` the normalized profile declares
+- `Persistence.load_profile(...)` validates profile versions and preserves higher profile versions with a passthrough warning because profile-specific migration dispatch is not yet implemented
 - persisted-only imported rulesets and transforms remain metadata artifacts with explicit non-executable state when live hooks are unavailable
 
-This means version fields are preserved, but they are not yet used to reject, migrate, or branch import logic.
+This means project and ruleset version fields are now used both to upgrade older supported payloads and to reject unsupported future payloads, while profile versions are currently preserved as model metadata until a stricter profile serialization boundary exists.
 
 ## Policy For Future Migration Work
 
-When migration logic is added, it should follow these rules:
+When migration logic expands beyond the current version `2` boundary, it should follow these rules:
 
 1. Project snapshot migration is keyed by `schema_version`.
 2. Persisted ruleset-state migration is keyed by `serialization_version`.
@@ -103,19 +103,31 @@ When migration logic is added, minimum tests should cover:
 - profile-state migration across at least one `version` increment
 - preservation of persisted-only non-executable state through migration
 
-## Current Repository Status
+## Implemented Upgrade Steps
 
-These notes document intended behavior. They do not mean migration is implemented yet.
+Current stepwise migrations:
+
+- project snapshots: `schema_version 1 -> 2`
+- persisted rulesets: `serialization_version 1 -> 2`
+
+Current `v1 -> v2` behavior:
+
+- project snapshots gain canonical root collection arrays plus `migration_history`
+- persisted rulesets gain canonical `transforms` plus compatibility `transformations`, normalized `analysis_lenses`, and explicit strategy-presence flags
+
+## Current Repository Status
 
 What exists now:
 
-- version fields are present and validated where relevant
+- explicit migration helpers exist for project, ruleset, and profile persisted state
+- project and ruleset loads migrate `v1 -> v2`
+- project and ruleset loads reject unsupported future versions
+- profile loads validate positive versions and preserve higher values with warnings
 - persistence round-trips preserve version markers
 - import works for current known payload shapes
 
 What still needs implementation:
 
-- explicit migration helpers
-- version dispatch during import
-- rejection of unsupported future payload versions
+- additional stepwise migration functions for future schema/version bumps
+- stricter profile-state migration dispatch or a dedicated profile serialization field
 - migration-specific tests

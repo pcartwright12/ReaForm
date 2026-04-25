@@ -3,6 +3,7 @@ local Result = require("reaform.utils.result")
 local Ids = require("reaform.core.ids")
 
 local Schemas = {}
+local CURRENT_RULESET_SERIALIZATION_VERSION = 2
 
 local EVALUATION_CLASSIFICATIONS = {
     "hard_failure",
@@ -310,7 +311,7 @@ function Schemas.normalize_ruleset(payload)
         scoring_models = Validation.ensure_array(payload.scoring_models),
         validation_modes = Validation.ensure_array(payload.validation_modes),
         default_profiles = Validation.ensure_array(payload.default_profiles),
-        serialization_version = payload.serialization_version or 1,
+        serialization_version = payload.serialization_version or CURRENT_RULESET_SERIALIZATION_VERSION,
         module_path = payload.module_path,
         evaluation_strategy = payload.evaluation_strategy,
         generator_strategy = generation_strategy,

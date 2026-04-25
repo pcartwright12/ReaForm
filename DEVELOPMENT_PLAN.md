@@ -17,6 +17,7 @@ Current working features:
 
 - generic object, constraint, transformation, and ruleset validation
 - top-level ruleset loading and orchestration through `main.lua`
+- workflow/controller actions for interactive use above `main.lua`
 - shared generation and evaluation entry points across multiple rulesets
 - canonical normalization for legacy object/ruleset inputs
 - in-memory registries for objects, relationships, analyses, rulesets, and profiles
@@ -25,6 +26,8 @@ Current working features:
 Obvious gaps:
 
 - migration and richer orchestration behavior beyond the new JSON-safe persistence save/load/import helpers
+- workflow/controller APIs for interactive use above `main.lua`
+- minimal REAPER GUI loop for firsthand UX testing
 - broader engine split from the lockfile
 - ruleset packaging with profiles/rules/transforms/analyses subtrees
 - deeper analysis-lens and transform semantics beyond the new registration seams
@@ -40,7 +43,7 @@ Obvious gaps:
 | Shared registries for objects/relationships/analyses/rulesets/profiles | `docs/ReaForm_Lockfile.md` | Partial | Added minimal in-memory registries with thin APIs plus transform and analysis-lens registration seams. | Medium |
 | Formal evaluation context/result objects | `docs/ReaForm_Lockfile.md` | Partial | Added contracts and evaluator integration; generator/transform contracts remain smaller than target. | Medium |
 | Schenkerian placeholder ruleset | `docs/ReaForm_Lockfile.md`, `docs/status-against-lockfile.md` | Complete | Added minimal placeholder using shared APIs only. | Low |
-| Persistence boundary | `docs/ReaForm_Lockfile.md` | Partial | Added JSON-safe save/load helpers, project-state import into live registries, a top-level orchestration facade for reset/import/export flows, and explicit migration notes, but not implemented migration dispatch/support yet. | Medium |
+| Persistence boundary | `docs/ReaForm_Lockfile.md` | Partial | Added JSON-safe save/load helpers, project-state import into live registries, a top-level orchestration facade for reset/import/export flows, migration notes, and version-aware migration dispatch with `v1 -> v2` upgrades for project/ruleset payloads, but not broader future-version migration support yet. | Medium |
 | Broader engine decomposition | `docs/ReaForm_Lockfile.md` | Partial | Added classifier/dispatcher/constraint evaluator plus a small top-level `main.lua` orchestration surface for common run flows. | Medium |
 | Anti-counterpoint regression coverage | lockfile explicit anti-regression rules | Partial | Added static and runtime coverage for shared core/engine source and multi-ruleset tests. | Medium |
 | Repository validation command works in local environment | `README.md`, `docs/testing-and-contributing.md` | Partial | Validation succeeds with a workspace-local Lua 5.4 runtime; the plain `lua` command still depends on `PATH`. | Medium |
@@ -87,6 +90,13 @@ Obvious gaps:
   - [x] Improve test breadth with runtime persistence and registration coverage.
   - [ ] Reconcile remaining doc/code drift.
   - [x] Tighten acceptance coverage for registries, persistence, and multi-ruleset loading.
+
+### Phase 5: Interactive Loop
+
+- Status:
+  - [x] Add a small workflow/controller layer above `main.lua`.
+  - [x] Add a minimal REAPER GUI script for generate/evaluate/transform testing.
+  - [x] Add session-state handling for the active ruleset and last results.
 
 ## Task Breakdown
 
@@ -192,7 +202,13 @@ Obvious gaps:
 - [x] Give persisted-only imported rulesets/transforms a formal non-executable state/API.
 - [x] Expand `main.lua` from a thin loader into a small orchestration facade for common repository flows.
 - [x] Add migration notes.
-- [ ] Implement version-aware persistence migration dispatch and rejection rules.
+- [x] Implement version-aware persistence migration dispatch and rejection rules.
+- [x] Add the first real stepwise migration path for persisted project/ruleset state.
+- [x] Build a tiny workflow/controller layer above `main.lua` for GUI-safe actions.
+- [x] Build a minimal REAPER GUI script on top of that workflow layer.
+- [x] Add session-state handling for the GUI loop.
+- [ ] Refine the REAPER GUI output and interaction behavior after firsthand testing.
+- [ ] Resume additional persistence/profile migration work after the interactive loop exists.
 
 ## Assumptions And Defaults
 

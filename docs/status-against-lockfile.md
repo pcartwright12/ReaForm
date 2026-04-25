@@ -17,8 +17,11 @@ The lockfile describes a much broader Phase 1 foundation with registries, richer
 - In-memory registries for objects, relationships, analyses, rulesets, profiles, and transforms
 - Analysis-lens registration driven from saved rulesets
 - JSON-safe persistence helpers for project, ruleset, and profile state
+- Version-aware migration dispatch for project snapshots and persisted ruleset state, including `v1 -> v2` upgrade steps
 - Project-state import helpers that repopulate live registries from saved snapshots
 - A small top-level `main.lua` orchestration surface
+- A workflow/controller layer for GUI-safe ruleset selection, generate/evaluate/transform actions, object listing, and session state
+- A minimal REAPER GUI entry script for the first interactive generate/evaluate/transform loop
 - Directory-level `ruleset.lua` wrappers for the placeholder ruleset families
 - Stricter schema validation for optional ruleset/profile fields that previously normalized malformed data away
 - Formal non-executable execution state for persisted-only imported rulesets and transforms
@@ -56,9 +59,11 @@ These lockfile goals are present in reduced or incomplete form:
 - Multiple ruleset examples:
   Present, and now wrapped behind directory-level `ruleset.lua` entry points, but still with fewer domains and much lighter placeholder content than the target structure.
 - Persistence boundary:
-  Present for JSON-safe save/load and registry import of project, ruleset, and profile state, with migration notes now documented, but still not yet an implemented migration layer.
+  Present for JSON-safe save/load, version-aware project/ruleset migration dispatch, real `v1 -> v2` upgrades, profile-version validation, and registry import of project, ruleset, and profile state, but still not yet a broader future-version migration layer.
 - Top-level boundary:
   Present as a small `main.lua` orchestration facade with ruleset resolution, bootstrap, import/export, and shared generate/evaluate/transform helpers, but still much smaller than the lockfile's eventual application boundary.
+- Interactive loop:
+  Partially implemented; the workflow/controller layer and first REAPER GUI entry point now exist, and the next planned slice is to refine output presentation and interaction behavior on top of that loop.
 
 ## Not Yet Implemented
 
@@ -131,7 +136,9 @@ These are useful entry points, but they are not yet the full engine skeleton des
 
 ### Registry And Persistence Delta
 
-The repository now has first-pass registries, transform and analysis-lens registration, JSON-safe persistence helpers, project-state import back into live registries, a top-level orchestration facade in `main.lua`, and explicit migration notes describing the intended version-evolution policy. What is still missing is automated migration code, richer module-layer workflows, and deeper relationship/analysis semantics.
+The repository now has first-pass registries, transform and analysis-lens registration, JSON-safe persistence helpers, project-state import back into live registries, a top-level orchestration facade in `main.lua`, and explicit migration dispatch with real `v1 -> v2` upgrades for project/ruleset persisted data. What is still missing is further stepwise migration code for future schema bumps, richer module-layer workflows, and deeper relationship/analysis semantics.
+
+The next practical priority is now the interactive loop UX: the workflow/controller layer and first REAPER GUI exist, so the next step is to improve presentation, rendering, and state-driven interaction behavior before more depth is added elsewhere.
 
 ### Ruleset And Profile Delta
 

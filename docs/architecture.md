@@ -11,6 +11,8 @@ Today the codebase is organized around six areas:
 - `reaform/contracts/`: formal evaluation context and evaluation result contracts
 - `reaform/engine/`: shared entry points plus small evaluation dispatch helpers
 - `reaform/rulesets/`: domain-specific example rulesets with directory-level `ruleset.lua` wrappers
+- `reaform/workflows/`: GUI-safe workflow/controller modules above `main.lua`
+- `reaper/`: REAPER-hosted GUI entry scripts
 - `reaform/tests/`: contract and behavior coverage
 - `reaform/utils/`: validation and result helpers used across the repository
 
@@ -207,5 +209,44 @@ The current repository already reinforces several important boundaries:
 - Rulesets carry domain-specific types and behavior.
 - Contract validation lives in shared modules, not inside individual rulesets.
 - Tests check that non-counterpoint rulesets operate through the same generic entry points.
+
+## Next Interactive Boundary
+
+The next practical architectural step was a thin workflow/controller layer above `main.lua`, followed by a minimal REAPER GUI script.
+
+That boundary should:
+
+- translate GUI actions into stable workflow calls
+- own active session state such as the selected ruleset and last results
+- keep REAPER UI code separate from shared ruleset and registry logic
+
+Planned first-class workflow actions:
+
+- list rulesets
+- select active ruleset
+- generate
+- evaluate
+- apply transform
+- list current objects/results
+
+That workflow/controller layer now exists in `reaform/workflows/session_workflow.lua` and owns:
+
+- active ruleset selection
+- last generated object
+- last evaluation
+- last error
+- available transforms for the active ruleset
+
+That REAPER-hosted GUI script now exists in `reaper/gui_main.lua`. It consumes the workflow/controller layer and provides a first-screen loop for:
+
+- ruleset selection
+- generate
+- evaluate
+- transform selection/application
+- output inspection
+
+The next interactive architectural step is now to refine output presentation and session-driven UI behavior on top of that first loop.
+
+The detailed plan for that interactive loop lives in [Interactive Loop Plan](interactive-loop-plan.md).
 
 For the larger architecture that the project intends to reach, see [Status Against Lockfile](status-against-lockfile.md).

@@ -2,6 +2,9 @@ local Result = require("reaform.utils.result")
 local Validation = require("reaform.utils.validation")
 local Ids = require("reaform.core.ids")
 local Schemas = require("reaform.core.schemas")
+local ProjectMigration = require("reaform.core.migrations.project")
+local RulesetMigration = require("reaform.core.migrations.ruleset")
+local ProfileMigration = require("reaform.core.migrations.profile")
 local ObjectRegistry = require("reaform.core.object_registry")
 local RelationshipGraph = require("reaform.core.relationship_graph")
 local AnalysisRegistry = require("reaform.core.analysis_registry")
@@ -307,12 +310,42 @@ local function write_file(path, content)
     return true
 end
 
+local function decode_file(path, failure_message)
+    local content = read_file(path)
+    if content == nil then
+        return Result.fail({
+            { code = "persistence.read_failed", message = failure_message or "Failed to read persisted file.", field = "path", severity = "error" },
+        })
+    end
+
+    local ok, decoded_or_error = pcall(decode_json, content)
+    if not ok then
+        return Result.fail({
+            { code = "persistence.decode_failed", message = tostring(decoded_or_error), severity = "error" },
+        })
+    end
+
+    return Result.ok(decoded_or_error)
+end
+
 function Persistence.serialize_ruleset_state(ruleset)
     return Schemas.serialize_ruleset_state(ruleset)
 end
 
 function Persistence.serialize_profile_state(profile)
     return Schemas.serialize_profile_state(profile)
+end
+
+function Persistence.migrate_project_state(snapshot)
+    return ProjectMigration.migrate(snapshot)
+end
+
+function Persistence.migrate_ruleset_state(ruleset_state)
+    return RulesetMigration.migrate(ruleset_state)
+end
+
+function Persistence.migrate_profile_state(profile_state)
+    return ProfileMigration.migrate(profile_state)
 end
 
 function Persistence.export_project_state(metadata)
@@ -325,9 +358,10 @@ function Persistence.export_project_state(metadata)
     local analysis_lenses = AnalysisRegistry.list_lenses()
 
     local snapshot = {
-        schema_version = 1,
+        schema_version = ProjectMigration.CURRENT_SCHEMA_VERSION,
         exported_at = Ids.timestamp(),
         metadata = Validation.copy_table(metadata or {}),
+        migration_history = {},
         objects = objects.data or {},
         relationships = relationships.data or {},
         analyses = analyses.data or {},
@@ -382,34 +416,25 @@ function Persistence.save_project(path, metadata)
 end
 
 function Persistence.load_project(path)
-    local content = read_file(path)
-    if content == nil then
-        return Result.fail({
-            { code = "persistence.read_failed", message = "Failed to read project file.", field = "path", severity = "error" },
-        })
+    local decoded = decode_file(path, "Failed to read project file.")
+    if not decoded.ok then
+        return decoded
     end
 
-    local ok, decoded_or_error = pcall(decode_json, content)
-    if not ok then
-        return Result.fail({
-            { code = "persistence.decode_failed", message = tostring(decoded_or_error), severity = "error" },
-        })
-    end
-
-    return Result.ok(decoded_or_error)
+    return Persistence.migrate_project_state(decoded.data)
 end
 
 function Persistence.import_project_state(snapshot, options)
-    if not Validation.is_table(snapshot) then
-        return Result.fail({
-            { code = "persistence.invalid_snapshot", message = "Project snapshot must be a table.", severity = "error" },
-        })
+    local migrated_snapshot = Persistence.migrate_project_state(snapshot)
+    if not migrated_snapshot.ok then
+        return migrated_snapshot
     end
 
     local import_options = Validation.copy_table(options or {})
     local reset_registries = import_options.reset_registries ~= false
     local load_ruleset_modules = import_options.load_ruleset_modules ~= false
-    local warnings = {}
+    local warnings = Result.merge_warnings(migrated_snapshot.warnings)
+    local imported_snapshot = migrated_snapshot.data
 
     if reset_registries then
         ObjectRegistry.reset()
@@ -430,29 +455,36 @@ function Persistence.import_project_state(snapshot, options)
         analysis_lenses = 0,
     }
 
-    for _, ruleset_state in ipairs(Validation.ensure_array(snapshot.rulesets)) do
+    for _, ruleset_state in ipairs(Validation.ensure_array(imported_snapshot.rulesets)) do
+        local migrated_ruleset_state = Persistence.migrate_ruleset_state(ruleset_state)
+        if not migrated_ruleset_state.ok then
+            return migrated_ruleset_state
+        end
+
+        warnings = Result.merge_warnings(warnings, migrated_ruleset_state.warnings)
+        local active_ruleset_state = migrated_ruleset_state.data
         local imported_result = nil
 
-        if load_ruleset_modules and Validation.is_non_empty_string(ruleset_state.module_path) then
-            local loaded_module = load_ruleset_module(ruleset_state.module_path)
+        if load_ruleset_modules and Validation.is_non_empty_string(active_ruleset_state.module_path) then
+            local loaded_module = load_ruleset_module(active_ruleset_state.module_path)
             if loaded_module.ok then
                 imported_result = RuleSetRegistry.save_ruleset(loaded_module.data)
             else
-                ruleset_state.execution_state = "persisted_metadata"
-                ruleset_state.execution_error = loaded_module.errors[1] and loaded_module.errors[1].code or "module_load_failed"
+                active_ruleset_state.execution_state = "persisted_metadata"
+                active_ruleset_state.execution_error = loaded_module.errors[1] and loaded_module.errors[1].code or "module_load_failed"
                 warnings = Result.merge_warnings(warnings, {
                     Validation.warning(
                         "persistence.ruleset_module_fallback",
                         "Failed to load live RuleSet module; importing persisted RuleSet state instead.",
                         "module_path",
-                        { ruleset_id = ruleset_state.id, module_path = ruleset_state.module_path, reason = loaded_module.errors[1] and loaded_module.errors[1].message }
+                        { ruleset_id = active_ruleset_state.id, module_path = active_ruleset_state.module_path, reason = loaded_module.errors[1] and loaded_module.errors[1].message }
                     ),
                 })
             end
         end
 
         if imported_result == nil then
-            imported_result = RuleSetRegistry.import_ruleset_state(ruleset_state)
+            imported_result = RuleSetRegistry.import_ruleset_state(active_ruleset_state)
         end
 
         if not imported_result.ok then
@@ -463,7 +495,7 @@ function Persistence.import_project_state(snapshot, options)
         imported_counts.rulesets = imported_counts.rulesets + 1
     end
 
-    for _, object_state in ipairs(Validation.ensure_array(snapshot.objects)) do
+    for _, object_state in ipairs(Validation.ensure_array(imported_snapshot.objects)) do
         local imported = ObjectRegistry.create_object(object_state.object_type or object_state.type, object_state)
         if not imported.ok then
             return imported
@@ -472,7 +504,7 @@ function Persistence.import_project_state(snapshot, options)
         imported_counts.objects = imported_counts.objects + 1
     end
 
-    for _, relationship_state in ipairs(Validation.ensure_array(snapshot.relationships)) do
+    for _, relationship_state in ipairs(Validation.ensure_array(imported_snapshot.relationships)) do
         local imported = RelationshipGraph.store_relationship(relationship_state)
         if not imported.ok then
             return imported
@@ -481,7 +513,7 @@ function Persistence.import_project_state(snapshot, options)
         imported_counts.relationships = imported_counts.relationships + 1
     end
 
-    for _, analysis_state in ipairs(Validation.ensure_array(snapshot.analyses)) do
+    for _, analysis_state in ipairs(Validation.ensure_array(imported_snapshot.analyses)) do
         local imported = AnalysisRegistry.store_analysis(analysis_state)
         if not imported.ok then
             return imported
@@ -490,8 +522,14 @@ function Persistence.import_project_state(snapshot, options)
         imported_counts.analyses = imported_counts.analyses + 1
     end
 
-    for _, profile_state in ipairs(Validation.ensure_array(snapshot.profiles)) do
-        local imported = ProfileRegistry.save_profile(profile_state)
+    for _, profile_state in ipairs(Validation.ensure_array(imported_snapshot.profiles)) do
+        local migrated_profile_state = Persistence.migrate_profile_state(profile_state)
+        if not migrated_profile_state.ok then
+            return migrated_profile_state
+        end
+
+        warnings = Result.merge_warnings(warnings, migrated_profile_state.warnings)
+        local imported = ProfileRegistry.save_profile(migrated_profile_state.data)
         if not imported.ok then
             return imported
         end
@@ -499,7 +537,7 @@ function Persistence.import_project_state(snapshot, options)
         imported_counts.profiles = imported_counts.profiles + 1
     end
 
-    for _, transform_state in ipairs(Validation.ensure_array(snapshot.transforms)) do
+    for _, transform_state in ipairs(Validation.ensure_array(imported_snapshot.transforms)) do
         local existing = TransformRegistry.get_transform(transform_state.id)
         if not existing.ok then
             local imported = TransformRegistry.import_transform_state(transform_state)
@@ -511,7 +549,7 @@ function Persistence.import_project_state(snapshot, options)
         end
     end
 
-    for _, lens_state in ipairs(Validation.ensure_array(snapshot.analysis_lenses)) do
+    for _, lens_state in ipairs(Validation.ensure_array(imported_snapshot.analysis_lenses)) do
         local existing = AnalysisRegistry.get_lens(lens_state.id)
         if not existing.ok then
             local imported = AnalysisRegistry.register_lens(lens_state.ruleset_id, lens_state)
@@ -524,9 +562,10 @@ function Persistence.import_project_state(snapshot, options)
     end
 
     return Result.ok({
-        schema_version = snapshot.schema_version or 1,
+        schema_version = imported_snapshot.schema_version or 1,
         imported = imported_counts,
-        metadata = Validation.copy_table(snapshot.metadata or {}),
+        metadata = Validation.copy_table(imported_snapshot.metadata or {}),
+        migration_history = Validation.ensure_array(imported_snapshot.migration_history),
     }, warnings)
 end
 
@@ -565,7 +604,12 @@ function Persistence.save_ruleset(path, ruleset)
 end
 
 function Persistence.load_ruleset(path)
-    return Persistence.load_project(path)
+    local loaded = decode_file(path, "Failed to read ruleset file.")
+    if not loaded.ok then
+        return loaded
+    end
+
+    return Persistence.migrate_ruleset_state(loaded.data)
 end
 
 function Persistence.save_profile(path, profile)
@@ -594,7 +638,12 @@ function Persistence.save_profile(path, profile)
 end
 
 function Persistence.load_profile(path)
-    return Persistence.load_project(path)
+    local loaded = decode_file(path, "Failed to read profile file.")
+    if not loaded.ok then
+        return loaded
+    end
+
+    return Persistence.migrate_profile_state(loaded.data)
 end
 
 return Persistence

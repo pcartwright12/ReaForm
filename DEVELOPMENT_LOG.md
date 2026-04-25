@@ -362,3 +362,133 @@
   - [ ] Continue reconciling any remaining doc/code drift.
 - Next step:
   - [ ] Implement version-aware persistence migration dispatch and unsupported-version rejection behavior.
+
+## 2026-04-24T16:06:48.6051236-05:00
+
+- Files changed:
+  - `reaform/core/migrations/project.lua`
+  - `reaform/core/migrations/ruleset.lua`
+  - `reaform/core/migrations/profile.lua`
+  - `reaform/core/persistence.lua`
+  - `reaform/tests/test_foundation.lua`
+  - `README.md`
+  - `docs/persistence-migration.md`
+  - `docs/status-against-lockfile.md`
+  - `docs/testing-and-contributing.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: added first-pass version-aware migration dispatch modules for project snapshots, persisted rulesets, and profiles; wired persistence load/import paths through those helpers; rejected unsupported future project schema and ruleset serialization versions; and kept higher profile versions as validated passthrough metadata with warnings until a stricter profile serialization boundary exists.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 35 total tests.
+- Status:
+  - [x] Project snapshot migration dispatch added.
+  - [x] Persisted ruleset migration dispatch added.
+  - [x] Unsupported future project/ruleset versions now fail clearly.
+  - [x] Profile version validation routed through a migration helper with passthrough warnings for higher versions.
+- Outstanding:
+  - [ ] Add stepwise migration handlers for future schema/version bumps.
+  - [ ] Continue reconciling any remaining doc/code drift.
+- Next step:
+  - [ ] Add the first real version-step migration path instead of current-version validation only.
+
+## 2026-04-25T08:40:18.6562203-05:00
+
+- Files changed:
+  - `reaform/core/migrations/project.lua`
+  - `reaform/core/migrations/ruleset.lua`
+  - `reaform/core/persistence.lua`
+  - `reaform/core/schemas.lua`
+  - `reaform/tests/test_foundation.lua`
+  - `README.md`
+  - `docs/persistence-migration.md`
+  - `docs/status-against-lockfile.md`
+  - `docs/testing-and-contributing.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: implemented the first real stepwise migration path by bumping current persisted project snapshots and persisted rulesets to version `2`, adding explicit `v1 -> v2` migration steps for both, preserving migration history on project snapshots, and extending foundation coverage so older payloads are upgraded rather than merely accepted.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 37 total tests.
+- Status:
+  - [x] Project snapshot `schema_version 1 -> 2` migration implemented.
+  - [x] Persisted RuleSet `serialization_version 1 -> 2` migration implemented.
+  - [x] Current save paths now emit project/ruleset version `2`.
+  - [x] Migration tests added for upgrade and future-version rejection behavior.
+- Outstanding:
+  - [ ] Add additional migration handlers for future schema/version bumps.
+  - [ ] Continue reconciling any remaining doc/code drift.
+- Next step:
+  - [ ] Decide whether profile persistence should gain its own serialization boundary and real stepwise migrations.
+
+## 2026-04-25T12:44:38.6961983-05:00
+
+- Files changed:
+  - `docs/interactive-loop-plan.md`
+  - `README.md`
+  - `docs/architecture.md`
+  - `docs/status-against-lockfile.md`
+  - `docs/testing-and-contributing.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: reprioritized the documented next slices around a minimal interactive loop, added a dedicated interactive-loop planning document, and aligned the repo-level architecture and planning docs around three near-term goals: a workflow/controller layer above `main.lua`, a minimal REAPER GUI script, and session-state handling for active ruleset plus last results.
+- Validation command run: `rg -n "Interactive Loop Plan|workflow/controller|REAPER GUI|session-state" README.md docs DEVELOPMENT_PLAN.md DEVELOPMENT_LOG.md`
+- Result: passed; confirmed the new interactive-loop plan and matching references across the repository docs and planning files.
+- Status:
+  - [x] Interactive-loop priority documented.
+  - [x] Workflow/controller plan documented.
+  - [x] Minimal REAPER GUI and session-state plan documented.
+- Outstanding:
+  - [ ] Build a tiny workflow/controller layer above `main.lua` for GUI-safe actions.
+  - [ ] Build a minimal REAPER GUI script on top of that workflow layer.
+  - [ ] Add session-state handling for the GUI loop.
+- Next step:
+  - [ ] Implement the workflow/controller layer as the first interactive-loop slice.
+
+## 2026-04-25T13:15:32.2186468-05:00
+
+- Files changed:
+  - `reaform/workflows/session_workflow.lua`
+  - `reaform/tests/test_foundation.lua`
+  - `README.md`
+  - `docs/architecture.md`
+  - `docs/status-against-lockfile.md`
+  - `docs/testing-and-contributing.md`
+  - `docs/interactive-loop-plan.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: implemented the first interactive-loop code slice by adding a workflow/controller module above `main.lua` with GUI-safe actions for ruleset selection, generate/evaluate/transform flows, object listing, and retained session state for active ruleset plus last results; expanded foundation coverage to verify the new controller path.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 38 total tests.
+- Status:
+  - [x] Workflow/controller layer above `main.lua` added.
+  - [x] Session-state handling added at the controller layer.
+  - [x] Runtime coverage added for workflow/controller actions.
+- Outstanding:
+  - [ ] Build a minimal REAPER GUI script on top of the workflow/controller layer.
+  - [ ] Continue reconciling any remaining doc/code drift.
+- Next step:
+  - [ ] Implement the minimal REAPER GUI script as the next interactive-loop slice.
+
+## 2026-04-25T13:23:29.2380576-05:00
+
+- Files changed:
+  - `reaper/gui_main.lua`
+  - `reaform/tests/test_foundation.lua`
+  - `README.md`
+  - `docs/architecture.md`
+  - `docs/status-against-lockfile.md`
+  - `docs/testing-and-contributing.md`
+  - `docs/interactive-loop-plan.md`
+  - `DEVELOPMENT_PLAN.md`
+  - `DEVELOPMENT_LOG.md`
+- Summary of change: added the first minimal REAPER GUI entry script on top of the workflow/controller layer, with ruleset cycling, generate/evaluate controls, transform selection/application, and an output panel for results and errors; added non-REAPER smoke coverage for the GUI module and aligned the docs to treat GUI output/interaction refinement as the next interactive slice.
+- Validation command run: `.\.tools\lua-5.4.0\lua54.exe reaform/tests/runner.lua`
+- Result: passed; all three suites ran successfully with 39 total tests.
+- Status:
+  - [x] Minimal REAPER GUI entry script added.
+  - [x] GUI module smoke coverage added.
+  - [x] Interactive loop now exists end-to-end at a minimal level.
+- Outstanding:
+  - [ ] Refine the REAPER GUI output and interaction behavior after firsthand testing.
+  - [ ] Continue reconciling any remaining doc/code drift.
+- Next step:
+  - [ ] Improve GUI presentation and state-driven interaction behavior based on firsthand use.
